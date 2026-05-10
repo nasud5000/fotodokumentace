@@ -401,7 +401,7 @@ function initMsal(clientId, tenant) {
   const authority = tenant && tenant !== 'common' ? `https://login.microsoftonline.com/${tenant}` : 'https://login.microsoftonline.com/common';
   msalInstance = new msal.PublicClientApplication({
     auth: { clientId, authority, redirectUri: isFileProtocol() ? 'https://login.microsoftonline.com/common/oauth2/nativeclient' : cleanRedirectUri() },
-    cache: { cacheLocation: 'localStorage', storeAuthStateInCookie: false },
+    cache: { cacheLocation: 'localStorage', storeAuthStateInCookie: true },
   });
   msalInstance.initialize().then(() => {
     msalInstance.handleRedirectPromise().then(resp => {
