@@ -567,7 +567,7 @@ ITEMS.forEach(([id, name, icon]) => {
   const inp = document.createElement('input');
   inp.type = 'file'; inp.accept = 'image/*'; inp.capture = 'environment'; inp.id = 'inp-' + id;
   card.addEventListener('click', () => {
-    if (card.classList.contains('locked')) return;
+    if (card.classList.contains('locked') || card.classList.contains('uploading')) return;
     if (!provozovna) { highlightProvozovna(); return; }
     if (!account) { handleODClick(); return; }
     inp.click();
