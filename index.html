@@ -453,7 +453,7 @@ function handleODClick() {
 async function signIn() {
   setODState('loading');
   const req = { scopes: SCOPE, prompt: 'select_account' };
-  if (isRestrictedEnv() || isFileProtocol()) {
+  if (isRestrictedEnv() || isFileProtocol() || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
     try { await msalInstance.loginRedirect(req); } catch (e) { console.error('Redirect login error', e); setODState('error'); }
     return;
   }
