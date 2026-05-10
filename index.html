@@ -589,10 +589,11 @@ async function handleFileSelected(id, name, file, card) {
   try {
     const ok = await uploadToOneDrive(token, name, provozovna, file);
     if (ok) {
-      const isNew = !uploaded[id];
-      uploaded[id] = { name, file };
-      setCardState(card, id, 'done', `Uloženo → ${provozovna} / ${name}`);
-      if (isNew) updateFooter();
+      uploaded[id] = (uploaded[id] || 0) + 1;
+      const cnt = uploaded[id];
+      const label = cnt === 1 ? '1 fotka' : cnt < 5 ? `${cnt} fotky` : `${cnt} fotek`;
+      setCardState(card, id, 'done', `${label} uloženo · klepněte pro další`);
+      updateFooter();
     } else { setCardState(card, id, 'error', 'Nahrání selhalo – klepněte pro opakování'); }
   } catch (e) { console.error('Upload error', e); setCardState(card, id, 'error', 'Chyba sítě – klepněte pro opakování'); }
 }
@@ -614,7 +615,7 @@ function updateGrid() {
       c.classList.remove('locked');
       const id = c.id.replace('c-', '');
       if (!uploaded[id] && !c.classList.contains('uploading') && !c.classList.contains('error'))
-        document.getElementById('ch-' + id).textContent = 'klepněte pro foto';
+        document.getElementById('ch-' + id).textContent = uploaded[id] ? `${uploaded[id] === 1 ? '1 fotka' : uploaded[id] < 5 ? uploaded[id]+' fotky' : uploaded[id]+' fotek'} · klepněte pro další` : 'klepněte pro foto';
     } else {
       if (!c.classList.contains('uploading') && !c.classList.contains('done') && !c.classList.contains('error')) {
         c.classList.add('locked');
