@@ -453,8 +453,16 @@ function handleODClick() {
 async function signIn() {
   setODState('loading');
   const req = { scopes: SCOPE, prompt: 'select_account' };
-  if (isRestrictedEnv() || isFileProtocol() || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-    try { await msalInstance.loginRedirect(req); } catch (e) { console.error('Redirect login error', e); setODState('error'); }
+  // Clear any stale MSAL interaction state (prevents interaction_in_progress error)
+  Object.keys(sessionStorage).filter(k => k.startsWith('msal')).forEach(k => sessionStorage.removeItem(k));
+  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  if (isRestrictedEnv() || isFileProtocol() || isMobile) {
+    try { await msalInstance.loginRedirect(req); } catch (e) {
+      console.error('Redirect login error', e);
+      // If interaction still in progress, clear and retry once
+      Object.keys(sessionStorage).filter(k => k.startsWith('msal')).forEach(k => sessionStorage.removeItem(k));
+      try { await msalInstance.loginRedirect(req); } catch (e2) { setODState('error'); }
+    }
     return;
   }
   try {
@@ -463,6 +471,7 @@ async function signIn() {
   } catch (e) {
     if (e.errorCode === 'popup_window_error' || e.errorCode === 'empty_window_error') {
       console.warn('Popup blocked, falling back to redirect');
+      Object.keys(sessionStorage).filter(k => k.startsWith('msal')).forEach(k => sessionStorage.removeItem(k));
       try { await msalInstance.loginRedirect(req); } catch {}
     } else { console.error('Login error', e); setODState('idle'); }
   }
