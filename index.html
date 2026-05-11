@@ -275,7 +275,7 @@ header p  { margin-top: 6px; font-size: .82rem; font-weight: 300; color: rgba(25
 .modal-hint a { color:rgba(160,130,255,.7);text-decoration:none; }
 .modal-hint a:hover { color:rgba(160,130,255,1); }
 
-input[type="file"] { display: none; }
+/* input[type='file'] jsou vytvářeny dynamicky — neskrývat globálně */
 
 @media (max-width:520px){
   .grid{gap:10px} .card{padding:16px;gap:14px;min-height:84px;border-radius:18px}
@@ -573,7 +573,7 @@ ITEMS.forEach(([id, name, icon]) => {
     const inp = document.createElement('input');
     inp.type = 'file';
     inp.accept = 'image/*';
-    inp.style.cssText = 'position:fixed;top:-100px;opacity:0;pointer-events:none;';
+    inp.style.cssText = 'display:block;position:fixed;top:-200px;left:-200px;width:1px;height:1px;opacity:0;pointer-events:none;';
     inp.addEventListener('change', async e => {
       const file = e.target.files[0];
       if (inp.parentNode) inp.parentNode.removeChild(inp);
@@ -654,8 +654,11 @@ function updateGrid() {
     if (ready) {
       c.classList.remove('locked');
       const id = c.id.replace('c-', '');
-      if (!uploaded[id] && !c.classList.contains('uploading') && !c.classList.contains('error'))
-        document.getElementById('ch-' + id).textContent = uploaded[id] ? `${uploaded[id] === 1 ? '1 fotka' : uploaded[id] < 5 ? uploaded[id]+' fotky' : uploaded[id]+' fotek'} · klepněte pro další` : 'klepněte pro foto';
+      if (!c.classList.contains('uploading') && !c.classList.contains('error')) {
+          const cnt2 = uploaded[id] || 0;
+          const lbl2 = cnt2 === 0 ? 'klepněte pro foto' : (cnt2 === 1 ? '1 fotka' : cnt2 < 5 ? cnt2+' fotky' : cnt2+' fotek') + ' uloženo · klepněte pro další';
+          document.getElementById('ch-' + id).textContent = lbl2;
+        }
     } else {
       if (!c.classList.contains('uploading') && !c.classList.contains('done') && !c.classList.contains('error')) {
         c.classList.add('locked');
