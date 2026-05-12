@@ -565,76 +565,76 @@ ITEMS.forEach(([id, name, icon]) => {
   card.id = 'c-' + id;
   card.innerHTML = `<img class="photo-bg" id="pb-${id}" alt=""><div class="scrim"></div><div class="icon-pill"><svg viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">${icon}</svg></div><div class="card-info"><div class="card-name">${name}</div><div class="card-hint" id="ch-${id}">nejprve zadejte provozovnu</div></div><div class="state-icon" id="si-${id}"><svg viewBox="0 0 14 14"><polyline points="2,7.5 5.5,11.5 12,3"/></svg></div>`;
 
+  // Input se vytvoří jednou — visibility:hidden funguje na iOS Safari, display:none ne
+  const inp = document.createElement('input');
+  inp.type = 'file';
+  inp.accept = 'image/*';
+  // bez capture — aby iOS/Android nabídl výběr fotoaparát NEBO galerie
+  document.body.appendChild(inp);
+
+  inp.addEventListener('change', async e => {
+    const file = e.target.files[0];
+    inp.value = ''; // reset — umožní nahrát stejný soubor znovu
+    if (!file) return;
+    await handleFileSelected(id, name, file, card);
+  });
+
   card.addEventListener('click', () => {
     if (card.classList.contains('locked') || card.classList.contains('uploading')) return;
     if (!provozovna) { highlightProvozovna(); return; }
     if (!account) { handleODClick(); return; }
-    // Nový input při každém kliknutí — bez capture, takže iOS/Android nabídne dialog fotoaparát/galerie
-    const inp = document.createElement('input');
-    inp.type = 'file';
-    inp.accept = 'image/*';
-    inp.style.cssText = 'display:block;position:fixed;top:-200px;left:-200px;width:1px;height:1px;opacity:0;pointer-events:none;';
-    inp.addEventListener('change', async e => {
-      const file = e.target.files[0];
-      if (inp.parentNode) inp.parentNode.removeChild(inp);
-      if (!file) return;
-      await handleFileSelected(id, name, file, card);
-    });
-    document.body.appendChild(inp);
-    inp.click();
+    inp.click(); // přímý synchronní click — funguje jako user gesture
   });
 
   grid.appendChild(card);
 });
 
 async function handleFileSelected(id, name, file, card) {
-  // Zobraz náhled
+  // náhled
   const reader = new FileReader();
   reader.onload = ev => { const pb = document.getElementById('pb-' + id); if (pb) pb.src = ev.target.result; };
   reader.readAsDataURL(file);
 
-  // Stav: nahrávám
+  // stav uploading
   card.classList.remove('done', 'error');
   card.classList.add('uploading');
-  document.getElementById('ch-' + id).textContent = 'Nahrávám…';
+  const hint = document.getElementById('ch-' + id);
   const si = document.getElementById('si-' + id);
+  hint.textContent = 'Nahrávám…';
   si.className = 'state-icon ld visible';
   si.innerHTML = '';
 
-  // Token
+  // token
   const token = await getToken();
   if (!token) {
     card.classList.remove('uploading'); card.classList.add('error');
     si.className = 'state-icon err visible';
     si.innerHTML = '<svg viewBox="0 0 14 14"><line x1="3" y1="3" x2="11" y2="11" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/><line x1="11" y1="3" x2="3" y2="11" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg>';
-    document.getElementById('ch-' + id).textContent = 'Chyba přihlášení – klepněte znovu';
+    hint.textContent = 'Chyba přihlášení – klepněte znovu';
     return;
   }
 
-  // Upload
+  // upload
   let ok = false;
-  try {
-    ok = await uploadToOneDrive(token, name, provozovna, file);
-  } catch(e) {
-    console.error('Upload error', e);
-  }
+  try { ok = await uploadToOneDrive(token, name, provozovna, file); }
+  catch(e) { console.error('Upload error', e); }
 
   if (ok) {
     uploaded[id] = (uploaded[id] || 0) + 1;
     const cnt = uploaded[id];
-    const label = cnt === 1 ? '1 fotka' : cnt < 5 ? cnt + ' fotky' : cnt + ' fotek';
+    const label = cnt === 1 ? '1 fotka' : cnt < 5 ? cnt + ' fotky' : cnt + ' fotek';
     card.classList.remove('uploading', 'error');
     card.classList.add('done');
     si.className = 'state-icon ok visible';
     si.innerHTML = '<svg viewBox="0 0 14 14"><polyline points="2,7.5 5.5,11.5 12,3" stroke="#fff" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-    document.getElementById('ch-' + id).textContent = label + ' uloženo · klepněte pro další';
+    hint.textContent = label + ' uloženo · klepněte pro další';
     updateFooter();
   } else {
     card.classList.remove('uploading');
     card.classList.add('error');
     si.className = 'state-icon err visible';
     si.innerHTML = '<svg viewBox="0 0 14 14"><line x1="3" y1="3" x2="11" y2="11" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/><line x1="11" y1="3" x2="3" y2="11" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg>';
-    document.getElementById('ch-' + id).textContent = 'Nahrání selhalo – klepněte znovu';
+    hint.textContent = 'Nahrání selhalo – klepněte znovu';
   }
 }
 
