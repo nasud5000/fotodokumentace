@@ -8,16 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-body {
-  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-  min-height: 100vh;
-  background: #08001a;
-  overflow-x: hidden;
-  padding: 32px 20px 44px;
-}
-
-/* ── background blobs ─────────────────────────────────────────────── */
+body { font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif; min-height: 100vh; background: #08001a; overflow-x: hidden; padding: 32px 20px 44px; }
 .bg { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
 .blob { position: absolute; border-radius: 50%; filter: blur(90px); animation: drift linear infinite; }
 .b1 { width:650px;height:650px;background:#5c1fd4;opacity:.55;top:-180px;left:-120px;animation-duration:30s; }
@@ -25,263 +16,96 @@ body {
 .b3 { width:480px;height:480px;background:#c4178a;opacity:.45;bottom:-120px;left:15%;animation-duration:35s;animation-delay:-16s; }
 .b4 { width:400px;height:400px;background:#0aa8c0;opacity:.4;top:60%;left:5%;animation-duration:27s;animation-delay:-6s; }
 .b5 { width:320px;height:320px;background:#d46c14;opacity:.38;bottom:8%;right:8%;animation-duration:22s;animation-delay:-20s; }
-@keyframes drift {
-  0%   { transform:translate(0,0) scale(1); }
-  25%  { transform:translate(50px,-70px) scale(1.06); }
-  50%  { transform:translate(-40px,50px) scale(0.96); }
-  75%  { transform:translate(70px,35px) scale(1.04); }
-  100% { transform:translate(0,0) scale(1); }
-}
-
-/* ── glass mixin (reused via class) ───────────────────────────────── */
-.glass {
-  background: rgba(255,255,255,.09);
-  backdrop-filter: blur(32px) saturate(170%);
-  -webkit-backdrop-filter: blur(32px) saturate(170%);
-  border: 1px solid rgba(255,255,255,.20);
-  box-shadow: inset 0 1.5px 0 rgba(255,255,255,.22), inset 0 -1px 0 rgba(255,255,255,.05), 0 14px 44px rgba(0,0,0,.36);
-}
-
-/* ── shell ────────────────────────────────────────────────────────── */
-.shell { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; }
-
-/* ── header ───────────────────────────────────────────────────────── */
-header { text-align: center; margin-bottom: 22px; }
-header h1 { font-size: 1.6rem; font-weight: 500; color: rgba(255,255,255,.92); letter-spacing: -.02em; }
-header p  { margin-top: 6px; font-size: .82rem; font-weight: 300; color: rgba(255,255,255,.40); }
-
-/* ── top bar: provozovna + onedrive ───────────────────────────────── */
-.topbar {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 14px;
-  padding: 14px 18px;
-  border-radius: 18px;
-}
-.prov-label { font-size: .78rem; font-weight: 500; color: rgba(255,255,255,.55); white-space: nowrap; letter-spacing: .02em; }
-.prov-input {
-  flex: 1;
-  background: rgba(255,255,255,.10);
-  border: 1px solid rgba(255,255,255,.22);
-  border-radius: 10px;
-  padding: 9px 14px;
-  font-family: inherit;
-  font-size: .92rem;
-  font-weight: 500;
-  color: #fff;
-  outline: none;
-  transition: border-color .2s, background .2s;
-  min-width: 0;
-}
-.prov-input::placeholder { color: rgba(255,255,255,.30); font-weight: 300; }
-.prov-input:focus { border-color: rgba(255,255,255,.50); background: rgba(255,255,255,.14); }
-.prov-input.invalid { border-color: rgba(255,100,100,.55); background: rgba(255,60,60,.07); }
-
-.sep { width: 1px; height: 24px; background: rgba(255,255,255,.15); flex-shrink: 0; }
-
-/* onedrive status pill */
-.od-pill {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 14px;
-  border-radius: 22px;
-  border: 1px solid rgba(255,255,255,.18);
-  background: rgba(255,255,255,.08);
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background .2s;
-  flex-shrink: 0;
-}
-.od-pill:hover { background: rgba(255,255,255,.16); }
-.od-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,.3); transition: background .3s; flex-shrink: 0; }
-.od-dot.ok   { background: #3fc87a; box-shadow: 0 0 6px rgba(63,200,122,.6); }
-.od-dot.spin { background: #60a5fa; animation: pulse-dot 1s ease-in-out infinite; }
-.od-dot.err  { background: #f87171; }
+@keyframes drift { 0%{transform:translate(0,0) scale(1)} 25%{transform:translate(50px,-70px) scale(1.06)} 50%{transform:translate(-40px,50px) scale(0.96)} 75%{transform:translate(70px,35px) scale(1.04)} 100%{transform:translate(0,0) scale(1)} }
+.glass { background:rgba(255,255,255,.09); backdrop-filter:blur(32px) saturate(170%); -webkit-backdrop-filter:blur(32px) saturate(170%); border:1px solid rgba(255,255,255,.20); box-shadow:inset 0 1.5px 0 rgba(255,255,255,.22),inset 0 -1px 0 rgba(255,255,255,.05),0 14px 44px rgba(0,0,0,.36); }
+.shell { position:relative; z-index:1; max-width:860px; margin:0 auto; }
+header { text-align:center; margin-bottom:22px; }
+header h1 { font-size:1.6rem; font-weight:500; color:rgba(255,255,255,.92); letter-spacing:-.02em; }
+header p { margin-top:6px; font-size:.82rem; font-weight:300; color:rgba(255,255,255,.40); }
+.topbar { display:flex; align-items:center; gap:12px; margin-bottom:14px; padding:14px 18px; border-radius:18px; }
+.prov-label { font-size:.78rem; font-weight:500; color:rgba(255,255,255,.55); white-space:nowrap; letter-spacing:.02em; }
+.prov-input { flex:1; background:rgba(255,255,255,.10); border:1px solid rgba(255,255,255,.22); border-radius:10px; padding:9px 14px; font-family:inherit; font-size:.92rem; font-weight:500; color:#fff; outline:none; transition:border-color .2s,background .2s; min-width:0; }
+.prov-input::placeholder { color:rgba(255,255,255,.30); font-weight:300; }
+.prov-input:focus { border-color:rgba(255,255,255,.50); background:rgba(255,255,255,.14); }
+.prov-input.invalid { border-color:rgba(255,100,100,.55); background:rgba(255,60,60,.07); }
+.sep { width:1px; height:24px; background:rgba(255,255,255,.15); flex-shrink:0; }
+.od-pill { display:flex; align-items:center; gap:8px; padding:8px 14px; border-radius:22px; border:1px solid rgba(255,255,255,.18); background:rgba(255,255,255,.08); cursor:pointer; white-space:nowrap; transition:background .2s; flex-shrink:0; }
+.od-pill:hover { background:rgba(255,255,255,.16); }
+.od-dot { width:8px; height:8px; border-radius:50%; background:rgba(255,255,255,.3); transition:background .3s; flex-shrink:0; }
+.od-dot.ok { background:#3fc87a; box-shadow:0 0 6px rgba(63,200,122,.6); }
+.od-dot.spin { background:#60a5fa; animation:pulse-dot 1s ease-in-out infinite; }
+.od-dot.err { background:#f87171; }
 @keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.7)} }
-.od-lbl { font-size: .78rem; font-weight: 500; color: rgba(255,255,255,.75); }
-
-/* settings cog */
-.cog-btn {
-  width: 36px; height: 36px; border-radius: 50%;
-  border: 1px solid rgba(255,255,255,.18);
-  background: rgba(255,255,255,.08);
-  color: rgba(255,255,255,.6);
-  cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-  transition: background .2s, color .2s;
-}
-.cog-btn:hover { background: rgba(255,255,255,.18); color: rgba(255,255,255,.9); }
-.cog-btn svg { width: 16px; height: 16px; }
-
-/* ── grid ─────────────────────────────────────────────────────────── */
-.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
-
-/* ── card ─────────────────────────────────────────────────────────── */
-.card {
-  position: relative;
-  border-radius: 22px;
-  cursor: pointer;
-  overflow: hidden;
-  border: 1px solid rgba(255,255,255,.20);
-  background: rgba(255,255,255,.09);
-  backdrop-filter: blur(32px) saturate(170%);
-  -webkit-backdrop-filter: blur(32px) saturate(170%);
-  box-shadow: inset 0 1.5px 0 rgba(255,255,255,.22), inset 0 -1px 0 rgba(255,255,255,.05), 0 14px 44px rgba(0,0,0,.36);
-  display: flex;
-  align-items: center;
-  padding: 22px 26px;
-  gap: 20px;
-  min-height: 100px;
-  transition: transform .2s cubic-bezier(.34,1.56,.64,1), box-shadow .2s, background .2s, border-color .2s;
-  -webkit-tap-highlight-color: transparent;
-  text-align: left;
-}
-.card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 55%;
-  background: linear-gradient(180deg,rgba(255,255,255,.10) 0%,transparent 100%);
-  border-radius: 22px 22px 0 0;
-  pointer-events: none;
-}
-.card:not(.locked):hover {
-  transform: translateY(-4px) scale(1.016);
-  background: rgba(255,255,255,.15);
-  border-color: rgba(255,255,255,.32);
-  box-shadow: inset 0 1.5px 0 rgba(255,255,255,.28), inset 0 -1px 0 rgba(255,255,255,.07), 0 24px 64px rgba(0,0,0,.46);
-}
-.card:not(.locked):active { transform: scale(.975); transition-duration: .08s; }
-
-/* states */
-.card.locked { cursor: not-allowed; opacity: .55; }
-.card.uploading { border-color: rgba(96,165,250,.50); animation: card-pulse 1.4s ease-in-out infinite; }
+.od-lbl { font-size:.78rem; font-weight:500; color:rgba(255,255,255,.75); }
+.cog-btn { width:36px;height:36px;border-radius:50%;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .2s,color .2s; }
+.cog-btn:hover { background:rgba(255,255,255,.18); color:rgba(255,255,255,.9); }
+.cog-btn svg { width:16px; height:16px; }
+.grid { display:grid; grid-template-columns:1fr 1fr; gap:13px; }
+.card { position:relative;border-radius:22px;cursor:pointer;overflow:hidden;border:1px solid rgba(255,255,255,.20);background:rgba(255,255,255,.09);backdrop-filter:blur(32px) saturate(170%);-webkit-backdrop-filter:blur(32px) saturate(170%);box-shadow:inset 0 1.5px 0 rgba(255,255,255,.22),inset 0 -1px 0 rgba(255,255,255,.05),0 14px 44px rgba(0,0,0,.36);display:flex;align-items:center;padding:22px 26px;gap:20px;min-height:100px;transition:transform .2s cubic-bezier(.34,1.56,.64,1),box-shadow .2s,background .2s,border-color .2s;-webkit-tap-highlight-color:transparent;text-align:left; }
+.card::before { content:'';position:absolute;top:0;left:0;right:0;height:55%;background:linear-gradient(180deg,rgba(255,255,255,.10) 0%,transparent 100%);border-radius:22px 22px 0 0;pointer-events:none; }
+.card:not(.locked):hover { transform:translateY(-4px) scale(1.016);background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.32);box-shadow:inset 0 1.5px 0 rgba(255,255,255,.28),inset 0 -1px 0 rgba(255,255,255,.07),0 24px 64px rgba(0,0,0,.46); }
+.card:not(.locked):active { transform:scale(.975);transition-duration:.08s; }
+.card.locked { cursor:not-allowed;opacity:.55; }
+.card.uploading { border-color:rgba(96,165,250,.50);animation:card-pulse 1.4s ease-in-out infinite; }
 @keyframes card-pulse { 0%,100%{box-shadow:inset 0 1.5px 0 rgba(255,255,255,.22),0 14px 44px rgba(0,0,0,.36),0 0 0 0 rgba(96,165,250,.0)} 50%{box-shadow:inset 0 1.5px 0 rgba(255,255,255,.22),0 14px 44px rgba(0,0,0,.36),0 0 0 6px rgba(96,165,250,.18)} }
-.card.done    { border-color: rgba(80,210,130,.40); background: rgba(50,180,100,.10); }
-.card.error   { border-color: rgba(248,113,113,.45); background: rgba(220,60,60,.08); }
-
-/* photo bg */
+.card.done { border-color:rgba(80,210,130,.40);background:rgba(50,180,100,.10); }
+.card.error { border-color:rgba(248,113,113,.45);background:rgba(220,60,60,.08); }
 .photo-bg { position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .4s;pointer-events:none; }
-.scrim    { position:absolute;inset:0;background:linear-gradient(100deg,rgba(0,0,0,.65) 0%,rgba(0,0,0,.18) 65%,transparent 100%);opacity:0;transition:opacity .4s;pointer-events:none; }
+.scrim { position:absolute;inset:0;background:linear-gradient(100deg,rgba(0,0,0,.65) 0%,rgba(0,0,0,.18) 65%,transparent 100%);opacity:0;transition:opacity .4s;pointer-events:none; }
 .card.done .photo-bg, .card.done .scrim { opacity:1; }
-
-/* icon pill */
-.icon-pill {
-  position: relative; flex-shrink: 0;
-  width: 56px; height: 56px; border-radius: 16px;
-  background: rgba(255,255,255,.11); border: 1px solid rgba(255,255,255,.18);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.22);
-  display: flex; align-items: center; justify-content: center;
-  transition: background .2s;
-}
-.card:not(.locked):hover .icon-pill { background: rgba(255,255,255,.18); }
-.card.done  .icon-pill { background:rgba(50,200,110,.18);  border-color:rgba(80,210,130,.35); }
-.card.error .icon-pill { background:rgba(220,60,60,.18);   border-color:rgba(248,113,113,.35); }
+.icon-pill { position:relative;flex-shrink:0;width:56px;height:56px;border-radius:16px;background:rgba(255,255,255,.11);border:1px solid rgba(255,255,255,.18);box-shadow:inset 0 1px 0 rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;transition:background .2s; }
+.card:not(.locked):hover .icon-pill { background:rgba(255,255,255,.18); }
+.card.done .icon-pill { background:rgba(50,200,110,.18);border-color:rgba(80,210,130,.35); }
+.card.error .icon-pill { background:rgba(220,60,60,.18);border-color:rgba(248,113,113,.35); }
 .icon-pill svg { width:30px;height:30px;stroke:rgba(255,255,255,.88);fill:none;stroke-width:1.55;stroke-linecap:round;stroke-linejoin:round;transition:stroke .2s; }
-.card.done  .icon-pill svg { stroke:rgba(120,245,165,.95); }
+.card.done .icon-pill svg { stroke:rgba(120,245,165,.95); }
 .card.error .icon-pill svg { stroke:rgba(252,165,165,.95); }
-
-/* text */
-.card-info { flex:1; min-width:0; }
+.card-info { flex:1;min-width:0; }
 .card-name { font-size:.95rem;font-weight:600;color:rgba(255,255,255,.92);letter-spacing:.005em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
 .card-hint { margin-top:4px;font-size:.73rem;font-weight:300;color:rgba(255,255,255,.38);transition:color .2s; }
-.card.done     .card-hint { color:rgba(120,245,165,.70); }
-.card.error    .card-hint { color:rgba(252,165,165,.80); }
+.card.done .card-hint { color:rgba(120,245,165,.70); }
+.card.error .card-hint { color:rgba(252,165,165,.80); }
 .card.uploading .card-hint { color:rgba(147,197,253,.80); }
-
-/* check / spinner / error icon */
-.state-icon {
-  flex-shrink:0; width:28px; height:28px; border-radius:50%;
-  display:flex; align-items:center; justify-content:center;
-  opacity:0; transform:scale(.4);
-  transition:opacity .25s, transform .3s cubic-bezier(.34,1.56,.64,1);
-}
-.state-icon.visible { opacity:1; transform:scale(1); }
-.state-icon.ok  { background:rgba(50,200,110,.88); border:1px solid rgba(120,245,165,.55); }
-.state-icon.err { background:rgba(220,60,60,.80);  border:1px solid rgba(248,113,113,.50); }
-.state-icon.ld  { background:transparent; border:2px solid rgba(96,165,250,.80); border-top-color:transparent; animation:spin .7s linear infinite; }
+.state-icon { flex-shrink:0;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;opacity:0;transform:scale(.4);transition:opacity .25s,transform .3s cubic-bezier(.34,1.56,.64,1); }
+.state-icon.visible { opacity:1;transform:scale(1); }
+.state-icon.ok { background:rgba(50,200,110,.88);border:1px solid rgba(120,245,165,.55); }
+.state-icon.err { background:rgba(220,60,60,.80);border:1px solid rgba(248,113,113,.50); }
+.state-icon.ld { background:transparent;border:2px solid rgba(96,165,250,.80);border-top-color:transparent;animation:spin .7s linear infinite; }
 @keyframes spin { to { transform:scale(1) rotate(360deg); } }
 .state-icon svg { width:14px;height:14px;stroke:#fff;stroke-width:2.5;fill:none; }
-
-/* ── footer ───────────────────────────────────────────────────────── */
-.footer {
-  margin-top: 14px;
-  display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  padding: 14px 22px;
-  border-radius: 18px;
-}
-.ft-txt  { font-size:.80rem;font-weight:300;color:rgba(255,255,255,.48);flex:1; }
-.ft-cnt  { font-size:.82rem;font-weight:500;color:rgba(255,255,255,.72); }
-.xbtn {
-  font-family:inherit;font-size:.8rem;font-weight:500;
-  padding:8px 20px;border-radius:22px;
-  border:1px solid rgba(255,255,255,.24);background:rgba(255,255,255,.11);
-  color:rgba(255,255,255,.88);cursor:pointer;transition:background .15s,transform .1s;
-}
+.footer { margin-top:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 22px;border-radius:18px; }
+.ft-txt { font-size:.80rem;font-weight:300;color:rgba(255,255,255,.48);flex:1; }
+.ft-cnt { font-size:.82rem;font-weight:500;color:rgba(255,255,255,.72); }
+.xbtn { font-family:inherit;font-size:.8rem;font-weight:500;padding:8px 20px;border-radius:22px;border:1px solid rgba(255,255,255,.24);background:rgba(255,255,255,.11);color:rgba(255,255,255,.88);cursor:pointer;transition:background .15s,transform .1s; }
 .xbtn:hover { background:rgba(255,255,255,.20); }
 .xbtn:active { transform:scale(.96); }
 .xbtn:disabled { opacity:.3;pointer-events:none; }
-
-/* ── settings modal ───────────────────────────────────────────────── */
-.modal-wrap {
-  position: fixed; inset: 0; z-index: 100;
-  display: flex; align-items: center; justify-content: center;
-  padding: 20px;
-  background: rgba(0,0,0,.55);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  opacity: 0; pointer-events: none; transition: opacity .25s;
-}
-.modal-wrap.open { opacity: 1; pointer-events: all; }
-.modal {
-  width: 100%; max-width: 500px;
-  border-radius: 24px;
-  padding: 32px;
-  background: rgba(20,10,40,.88);
-  border: 1px solid rgba(255,255,255,.22);
-  box-shadow: inset 0 1.5px 0 rgba(255,255,255,.18), 0 32px 80px rgba(0,0,0,.7);
-  backdrop-filter: blur(40px);
-  -webkit-backdrop-filter: blur(40px);
-}
+.modal-wrap { position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,.55);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);opacity:0;pointer-events:none;transition:opacity .25s; }
+.modal-wrap.open { opacity:1;pointer-events:all; }
+.modal { width:100%;max-width:500px;border-radius:24px;padding:32px;background:rgba(20,10,40,.88);border:1px solid rgba(255,255,255,.22);box-shadow:inset 0 1.5px 0 rgba(255,255,255,.18),0 32px 80px rgba(0,0,0,.7);backdrop-filter:blur(40px);-webkit-backdrop-filter:blur(40px); }
 .modal h2 { font-size:1.1rem;font-weight:600;color:rgba(255,255,255,.92);margin-bottom:8px; }
-.modal p  { font-size:.8rem;font-weight:300;color:rgba(255,255,255,.50);line-height:1.6;margin-bottom:20px; }
+.modal p { font-size:.8rem;font-weight:300;color:rgba(255,255,255,.50);line-height:1.6;margin-bottom:20px; }
 .modal code { font-family:monospace;font-size:.75rem;background:rgba(255,255,255,.10);padding:2px 6px;border-radius:4px;color:rgba(200,180,255,.9); }
-.modal-field { margin-bottom: 16px; }
+.modal-field { margin-bottom:16px; }
 .modal-field label { display:block;font-size:.75rem;font-weight:500;color:rgba(255,255,255,.55);margin-bottom:6px;letter-spacing:.03em; }
-.modal-input {
-  width:100%;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.22);
-  border-radius:10px;padding:10px 14px;font-family:inherit;font-size:.88rem;
-  color:#fff;outline:none;transition:border-color .2s,background .2s;
-}
+.modal-input { width:100%;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.22);border-radius:10px;padding:10px 14px;font-family:inherit;font-size:.88rem;color:#fff;outline:none;transition:border-color .2s,background .2s; }
 .modal-input::placeholder { color:rgba(255,255,255,.25); }
 .modal-input:focus { border-color:rgba(255,255,255,.45);background:rgba(255,255,255,.13); }
 .modal-row { display:flex;gap:10px;margin-top:4px; }
-.modal-btn {
-  flex:1;padding:11px;border-radius:12px;font-family:inherit;font-size:.88rem;font-weight:500;cursor:pointer;transition:background .15s,transform .1s;
-}
+.modal-btn { flex:1;padding:11px;border-radius:12px;font-family:inherit;font-size:.88rem;font-weight:500;cursor:pointer;transition:background .15s,transform .1s; }
 .modal-btn.primary { background:rgba(130,80,255,.70);border:1px solid rgba(160,120,255,.45);color:#fff; }
 .modal-btn.primary:hover { background:rgba(130,80,255,.88); }
 .modal-btn.secondary { background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);color:rgba(255,255,255,.70); }
 .modal-btn.secondary:hover { background:rgba(255,255,255,.15); }
 .modal-btn:active { transform:scale(.97); }
-.modal-steps { margin: 0 0 20px; padding: 0; list-style: none; }
+.modal-steps { margin:0 0 20px;padding:0;list-style:none; }
 .modal-steps li { display:flex;gap:10px;margin-bottom:10px;font-size:.78rem;font-weight:300;color:rgba(255,255,255,.55);line-height:1.5; }
 .step-num { flex-shrink:0;width:20px;height:20px;border-radius:50%;background:rgba(130,80,255,.35);border:1px solid rgba(130,80,255,.5);display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:600;color:rgba(200,180,255,.9);margin-top:1px; }
 .modal-divider { height:1px;background:rgba(255,255,255,.10);margin:20px 0; }
 .modal-hint { font-size:.72rem;color:rgba(255,255,255,.30);text-align:center;margin-top:14px;line-height:1.5; }
 .modal-hint a { color:rgba(160,130,255,.7);text-decoration:none; }
 .modal-hint a:hover { color:rgba(160,130,255,1); }
-
-/* input[type='file'] jsou vytvářeny dynamicky — neskrývat globálně */
-
-@media (max-width:520px){
-  .grid{gap:10px} .card{padding:16px;gap:14px;min-height:84px;border-radius:18px}
-  .icon-pill{width:46px;height:46px;border-radius:13px} .icon-pill svg{width:24px;height:24px}
-  .card-name{font-size:.84rem} .topbar{flex-wrap:wrap}
-}
+@media (max-width:520px){ .grid{gap:10px} .card{padding:16px;gap:14px;min-height:84px;border-radius:18px} .icon-pill{width:46px;height:46px;border-radius:13px} .icon-pill svg{width:24px;height:24px} .card-name{font-size:.84rem} .topbar{flex-wrap:wrap} }
 </style>
 </head>
 <body>
@@ -291,37 +115,23 @@ header p  { margin-top: 6px; font-size: .82rem; font-weight: 300; color: rgba(25
   <div class="blob b3"></div><div class="blob b4"></div><div class="blob b5"></div>
 </div>
 
-<!-- Settings modal -->
 <div class="modal-wrap" id="modal-wrap">
   <div class="modal">
     <h2>Nastavení připojení k OneDrive</h2>
-    <p>Pro ukládání fotografií je potřeba propojit aplikaci s vaším firemním Microsoft 365 účtem.</p>
-
-    <ol class="modal-steps">
-      <li><span class="step-num">1</span><span>Přihlaste se na <strong style="color:rgba(255,255,255,.7)">portal.azure.com</strong> → Azure Active Directory → Registrace aplikací → Nová registrace</span></li>
-      <li><span class="step-num">2</span><span>Název: cokoliv (např. <code>FotodokumentaceApp</code>), typ: <em>Účty v libovolné org. adresáři</em></span></li>
-      <li><span class="step-num">3</span><span>URI přesměrování: <strong>Jednostránková aplikace (SPA)</strong> → vložte URL adresu tohoto souboru (nebo <code>http://localhost</code>)</span></li>
-      <li><span class="step-num">4</span><span>Po vytvoření zkopírujte <strong style="color:rgba(255,255,255,.7)">ID aplikace (klienta)</strong> a vložte níže</span></li>
-      <li><span class="step-num">5</span><span>V sekci <em>API oprávnění</em> přidejte: <code>Microsoft Graph → Files.ReadWrite</code></span></li>
-    </ol>
-
-    <div class="modal-divider"></div>
-
+    <p>Pro ukládání fotografií je potřeba zadat ID aplikace z Azure.</p>
     <div class="modal-field">
       <label>ID APLIKACE (CLIENT ID)</label>
       <input class="modal-input" id="inp-clientid" type="text" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off" spellcheck="false">
     </div>
     <div class="modal-field">
-      <label>ID TENANTA (volitelné – nechte prázdné pro běžné MS účty)</label>
+      <label>ID TENANTA (nechte prázdné pro běžné MS účty)</label>
       <input class="modal-input" id="inp-tenant" type="text" placeholder="common" autocomplete="off" spellcheck="false">
     </div>
-
     <div class="modal-row">
       <button class="modal-btn primary" onclick="saveSettings()">Uložit a pokračovat</button>
       <button class="modal-btn secondary" id="modal-cancel" onclick="closeModal()">Zrušit</button>
     </div>
-    <p class="modal-hint">Nastavení se uloží pouze v tomto prohlížeči.<br>
-      Potřebujete pomoc? <a href="https://learn.microsoft.com/cs-cz/azure/active-directory/develop/quickstart-register-app" target="_blank">Průvodce registrací aplikace →</a></p>
+    <p class="modal-hint">Nastavení se uloží v tomto prohlížeči.</p>
     <div id="modal-url-block" style="margin-top:16px;padding:12px 14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:10px;display:none">
       <div style="font-size:.72rem;font-weight:500;color:rgba(255,255,255,.45);letter-spacing:.04em;margin-bottom:6px">AKTUÁLNÍ URL — zkopírujte jako Redirect URI v Azure</div>
       <div style="display:flex;gap:8px;align-items:center">
@@ -332,14 +142,11 @@ header p  { margin-top: 6px; font-size: .82rem; font-weight: 300; color: rgba(25
   </div>
 </div>
 
-<!-- Main shell -->
 <div class="shell">
   <header>
     <h1>Fotodokumentace zařízení</h1>
     <p>Nahrané fotky se automaticky ukládají do OneDrive</p>
   </header>
-
-  <!-- Top bar: provozovna + OneDrive sign-in -->
   <div class="topbar glass">
     <span class="prov-label">Provozovna</span>
     <input class="prov-input" id="prov-input" type="text" placeholder="číslo provozovny" maxlength="40" autocomplete="off">
@@ -348,88 +155,68 @@ header p  { margin-top: 6px; font-size: .82rem; font-weight: 300; color: rgba(25
       <div class="od-dot" id="od-dot"></div>
       <span class="od-lbl" id="od-lbl">Přihlásit se</span>
     </div>
-    <button class="cog-btn" onclick="openModal()" title="Nastavení OneDrive">
+    <button class="cog-btn" onclick="openModal()" title="Nastavení">
       <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="8" cy="8" r="2.5"/>
         <path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41"/>
       </svg>
     </button>
   </div>
-
-  <!-- Device grid -->
   <div class="grid" id="grid"></div>
-
-  <!-- Footer -->
   <div class="footer glass">
-    <span class="ft-txt" id="ft-txt">Zadejte číslo provozovny a přihlaste se do OneDrive</span>
+    <span class="ft-txt" id="ft-txt">Zadejte číslo provozovny a přihlaste se</span>
     <span class="ft-cnt" id="ft-cnt">0 / 10</span>
     <button class="xbtn" id="xbtn" disabled onclick="doExport()">Exportovat</button>
   </div>
 </div>
 
-<!-- MSAL -->
 <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3/lib/msal-browser.min.js"></script>
 <script>
 let msalInstance = null;
-let account      = null;
-let provozovna   = '';
-const uploaded   = {};
-const SCOPE = ['Files.ReadWrite'];
+let account = null;
+let provozovna = '';
+const uploaded = {};
 
 function isRestrictedEnv() {
   const ua = navigator.userAgent || '';
-  return (/Teams\//i.test(ua) || /Electron/i.test(ua) || window.self !== window.top);
+  return /Teams\//i.test(ua) || /Electron/i.test(ua) || window.self !== window.top;
 }
 function isFileProtocol() { return window.location.protocol === 'file:'; }
 function cleanRedirectUri() { return window.location.href.split('?')[0].split('#')[0]; }
 
-function showEnvBanner() {
-  if (document.getElementById('env-banner')) return;
-  const banner = document.createElement('div');
-  banner.id = 'env-banner';
-  banner.style.cssText = `position:fixed;bottom:0;left:0;right:0;z-index:200;padding:14px 20px;background:rgba(20,10,40,.95);border-top:1px solid rgba(255,200,80,.30);backdrop-filter:blur(20px);display:flex;align-items:center;gap:14px;flex-wrap:wrap;font-family:'DM Sans',sans-serif;font-size:.82rem;`;
-  banner.innerHTML = `<span style="font-size:1.1rem">⚠️</span><span style="color:rgba(255,220,100,.9);font-weight:500;flex:1;min-width:200px">Teams blokuje přihlašovací okno. Nahrajte soubor na <strong>SharePoint</strong> a sdílejte odkaz místo souboru.</span><button onclick="openInBrowser()" style="font-family:inherit;font-size:.78rem;font-weight:500;padding:8px 16px;border-radius:20px;cursor:pointer;border:1px solid rgba(255,200,80,.45);background:rgba(255,200,80,.15);color:rgba(255,220,100,.95);white-space:nowrap;">Otevřít v prohlížeči</button><button onclick="this.closest('#env-banner').remove()" style="font-family:inherit;font-size:.78rem;font-weight:400;padding:8px 14px;border-radius:20px;cursor:pointer;border:1px solid rgba(255,255,255,.15);background:transparent;color:rgba(255,255,255,.45);white-space:nowrap;">Skrýt</button>`;
-  document.body.appendChild(banner);
-}
-function openInBrowser() {
-  const url = isFileProtocol() ? null : cleanRedirectUri();
-  if (url) window.open(url, '_blank', 'noopener');
-  else alert('Soubor je otevřen z disku (file://). Nahrajte ho na SharePoint nebo firemní web a sdílejte HTTPS odkaz.');
-}
-
 function initMsal(clientId, tenant) {
-  const authority = tenant && tenant !== 'common' ? `https://login.microsoftonline.com/${tenant}` : 'https://login.microsoftonline.com/common';
+  const authority = (tenant && tenant !== 'common')
+    ? 'https://login.microsoftonline.com/' + tenant
+    : 'https://login.microsoftonline.com/common';
   msalInstance = new msal.PublicClientApplication({
     auth: { clientId, authority, redirectUri: isFileProtocol() ? 'https://login.microsoftonline.com/common/oauth2/nativeclient' : cleanRedirectUri() },
     cache: { cacheLocation: 'localStorage', storeAuthStateInCookie: true },
   });
   msalInstance.initialize().then(() => {
     msalInstance.handleRedirectPromise().then(resp => {
-      if (resp) { setAccount(resp.account); }
-      else { const accounts = msalInstance.getAllAccounts(); if (accounts.length) setAccount(accounts[0]); }
+      if (resp) setAccount(resp.account);
+      else {
+        const accs = msalInstance.getAllAccounts();
+        if (accs.length) setAccount(accs[0]);
+      }
     }).catch(e => console.warn('MSAL redirect:', e));
-    if (isRestrictedEnv()) showEnvBanner();
   });
 }
 
 function openModal() {
   const cfg = loadCfg();
   document.getElementById('inp-clientid').value = cfg.clientId || '';
-  document.getElementById('inp-tenant').value   = cfg.tenant   || '';
+  document.getElementById('inp-tenant').value = cfg.tenant || '';
   document.getElementById('modal-cancel').style.display = cfg.clientId ? '' : 'none';
-  const urlBlock = document.getElementById('modal-url-block');
-  const curUrl = cleanRedirectUri ? cleanRedirectUri() : window.location.href;
   if (!isFileProtocol()) {
-    document.getElementById('modal-cur-url').textContent = curUrl;
-    urlBlock.style.display = 'block';
-  } else { urlBlock.style.display = 'none'; }
+    document.getElementById('modal-cur-url').textContent = cleanRedirectUri();
+    document.getElementById('modal-url-block').style.display = 'block';
+  }
   document.getElementById('modal-wrap').classList.add('open');
 }
 function copyUrl() {
-  const url = document.getElementById('modal-cur-url').textContent;
-  navigator.clipboard.writeText(url).then(() => {
-    const btn = event.target;
-    btn.textContent = 'Zkopírováno ✓';
+  navigator.clipboard.writeText(document.getElementById('modal-cur-url').textContent).then(() => {
+    const btn = event.target; btn.textContent = 'Zkopírováno ✓';
     setTimeout(() => btn.textContent = 'Kopírovat', 2000);
   });
 }
@@ -441,9 +228,7 @@ function saveSettings() {
   localStorage.setItem('fotodoc_cfg', JSON.stringify({ clientId: cid, tenant: ten }));
   closeModal(); initMsal(cid, ten); setODState('idle');
 }
-function loadCfg() {
-  try { return JSON.parse(localStorage.getItem('fotodoc_cfg') || '{}'); } catch { return {}; }
-}
+function loadCfg() { try { return JSON.parse(localStorage.getItem('fotodoc_cfg') || '{}'); } catch { return {}; } }
 
 function handleODClick() {
   if (!msalInstance) { openModal(); return; }
@@ -452,35 +237,31 @@ function handleODClick() {
 }
 async function signIn() {
   setODState('loading');
-  const req = { scopes: SCOPE, prompt: 'select_account' };
-  // Clear any stale MSAL interaction state (prevents interaction_in_progress error)
+  const req = { scopes: ['Files.ReadWrite'], prompt: 'select_account' };
   Object.keys(sessionStorage).filter(k => k.startsWith('msal')).forEach(k => sessionStorage.removeItem(k));
   const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
   if (isRestrictedEnv() || isFileProtocol() || isMobile) {
-    try { await msalInstance.loginRedirect(req); } catch (e) {
-      console.error('Redirect login error', e);
-      // If interaction still in progress, clear and retry once
+    try { await msalInstance.loginRedirect(req); }
+    catch(e) {
       Object.keys(sessionStorage).filter(k => k.startsWith('msal')).forEach(k => sessionStorage.removeItem(k));
-      try { await msalInstance.loginRedirect(req); } catch (e2) { setODState('error'); }
+      try { await msalInstance.loginRedirect(req); } catch { setODState('error'); }
     }
     return;
   }
   try {
     const resp = await msalInstance.loginPopup(req);
     setAccount(resp.account);
-  } catch (e) {
+  } catch(e) {
     if (e.errorCode === 'popup_window_error' || e.errorCode === 'empty_window_error') {
-      console.warn('Popup blocked, falling back to redirect');
       Object.keys(sessionStorage).filter(k => k.startsWith('msal')).forEach(k => sessionStorage.removeItem(k));
       try { await msalInstance.loginRedirect(req); } catch {}
-    } else { console.error('Login error', e); setODState('idle'); }
+    } else { setODState('idle'); }
   }
 }
 function signOut() {
   if (!confirm('Odhlásit se z OneDrive?')) return;
   account = null; setODState('idle'); updateGrid();
-  if (isRestrictedEnv()) msalInstance.logoutRedirect().catch(() => {});
-  else msalInstance.logoutPopup().catch(() => {});
+  try { msalInstance.logoutPopup(); } catch {}
 }
 function setAccount(acc) { account = acc; setODState('ok'); updateGrid(); }
 function setODState(s) {
@@ -494,177 +275,176 @@ function setODState(s) {
 }
 async function getToken() {
   if (!account || !msalInstance) return null;
-  const req = { scopes: SCOPE, account };
-  try {
-    const r = await msalInstance.acquireTokenSilent(req);
-    return r.accessToken;
-  } catch {
-    if (isRestrictedEnv()) {
-      try { await msalInstance.acquireTokenRedirect(req); } catch (e) { console.error('Token redirect error', e); }
+  const req = { scopes: ['Files.ReadWrite'], account };
+  try { return (await msalInstance.acquireTokenSilent(req)).accessToken; }
+  catch {
+    if (isRestrictedEnv() || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+      try { await msalInstance.acquireTokenRedirect(req); } catch {}
       return null;
     }
-    try {
-      const r = await msalInstance.acquireTokenPopup(req);
-      return r.accessToken;
-    } catch (e) {
-      if (e.errorCode === 'popup_window_error' || e.errorCode === 'empty_window_error') {
-        try { await msalInstance.acquireTokenRedirect(req); } catch {}
-        return null;
-      }
-      console.error('Token error', e); return null;
-    }
+    try { return (await msalInstance.acquireTokenPopup(req)).accessToken; }
+    catch { return null; }
   }
 }
 
 async function uploadToOneDrive(token, deviceName, provName, file) {
   const clean = s => s.replace(/[\\/: *?"<>|]/g, '_').trim();
   const ts = new Date().toISOString().replace(/[:.]/g,'').slice(0,15);
+  const rand = Math.random().toString(36).substring(2, 7);
   const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
-  const fname = `${clean(deviceName)}_${ts}.${ext}`;
-  const path = `Fotodokumentace/${clean(provName)}/${clean(deviceName)}/${fname}`;
-  const url = `https://graph.microsoft.com/v1.0/me/drive/root:/${encodeURI(path)}:/content`;
-  const SIZE_LIMIT = 4 * 1024 * 1024;
-  if (file.size <= SIZE_LIMIT) {
-    const r = await fetch(url, { method: 'PUT', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': file.type || 'image/jpeg' }, body: file });
+  const fname = clean(deviceName) + '_' + ts + '_' + rand + '.' + ext;
+  const path = 'Fotodokumentace/' + clean(provName) + '/' + clean(deviceName) + '/' + fname;
+  const url = 'https://graph.microsoft.com/v1.0/me/drive/root:/' + encodeURI(path) + ':/content';
+  if (file.size <= 4 * 1024 * 1024) {
+    const r = await fetch(url, { method:'PUT', headers:{'Authorization':'Bearer '+token,'Content-Type':file.type||'image/jpeg'}, body:file });
     return r.ok;
   }
-  const sessionR = await fetch(`https://graph.microsoft.com/v1.0/me/drive/root:/${encodeURI(path)}:/createUploadSession`, {
-    method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ item: { '@microsoft.graph.conflictBehavior': 'rename' } }),
+  const sr = await fetch('https://graph.microsoft.com/v1.0/me/drive/root:/' + encodeURI(path) + ':/createUploadSession', {
+    method:'POST', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+    body: JSON.stringify({item:{'@microsoft.graph.conflictBehavior':'rename'}}),
   });
-  const { uploadUrl } = await sessionR.json();
-  const CHUNK = 3 * 1024 * 1024;
+  const { uploadUrl } = await sr.json();
   let offset = 0;
   while (offset < file.size) {
-    const end = Math.min(offset + CHUNK, file.size);
-    const chunk = file.slice(offset, end);
-    const r = await fetch(uploadUrl, { method: 'PUT', headers: { 'Content-Range': `bytes ${offset}-${end-1}/${file.size}`, 'Content-Length': String(chunk.size) }, body: chunk });
+    const end = Math.min(offset + 3*1024*1024, file.size);
+    const r = await fetch(uploadUrl, { method:'PUT', headers:{'Content-Range':'bytes '+offset+'-'+(end-1)+'/'+file.size,'Content-Length':String(end-offset)}, body:file.slice(offset,end) });
     if (!r.ok && r.status !== 202) return false;
     offset = end;
   }
   return true;
 }
 
+/* ── KARTY A UPLOAD ─────────────────────────────────────────── */
+
+const fotoPocty = {};  // { id: počet nahraných fotek }
+
 const ITEMS = [
-  ['tiskarna','Tiskárna',`<rect x="5" y="10" width="22" height="14" rx="2"/><rect x="9" y="3" width="14" height="8" rx="1.5"/><rect x="9" y="20" width="14" height="7" rx="1.5"/><line x1="20" y1="15.5" x2="22.5" y2="15.5"/><circle cx="11" cy="15.5" r="1.3"/>`],
-  ['notebook','Notebook',`<rect x="2" y="4" width="24" height="17" rx="2"/><rect x="4.5" y="6.5" width="19" height="11.5" rx="1"/><path d="M0 21h28l-2 3H2z"/><line x1="12" y1="23" x2="16" y2="23"/>`],
-  ['kasa','Kasa',`<rect x="2" y="13" width="24" height="14" rx="2"/><path d="M7 13V7.5A3.5 3.5 0 0 1 10.5 4h7A3.5 3.5 0 0 1 21 7.5V13"/><rect x="10" y="19" width="8" height="5" rx="1.5"/><line x1="5" y1="17.5" x2="8" y2="17.5"/><line x1="11" y1="17.5" x2="14" y2="17.5"/><line x1="17" y1="17.5" x2="20" y2="17.5"/>`],
-  ['uctenk','Účtenková tiskárna',`<rect x="6.5" y="2" width="15" height="20" rx="2"/><line x1="9.5" y1="8" x2="18.5" y2="8"/><line x1="9.5" y1="12" x2="18.5" y2="12"/><line x1="9.5" y1="16" x2="15" y2="16"/><path d="M11 22 Q14 27.5 17 22"/><rect x="9" y="0" width="10" height="3" rx="1"/>`],
-  ['terminal','Terminál',`<rect x="8" y="1.5" width="12" height="25" rx="3"/><rect x="10.5" y="4.5" width="7" height="8" rx="1"/><line x1="10.5" y1="16.5" x2="12.5" y2="16.5"/><line x1="14.5" y1="16.5" x2="16.5" y2="16.5"/><line x1="10.5" y1="20" x2="12.5" y2="20"/><line x1="14.5" y1="20" x2="16.5" y2="20"/>`],
-  ['kamery','Kamery',`<path d="M1 10.5h17a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H1a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1z"/><path d="M19 14l9-4.5v10L19 15z"/><circle cx="9.5" cy="15.5" r="3"/><circle cx="9.5" cy="15.5" r="1.2"/><circle cx="4" cy="7" r="2.2"/><line x1="4" y1="9.2" x2="4" y2="10.5"/>`],
-  ['televizory','Televizory',`<rect x="1" y="2.5" width="26" height="18" rx="2"/><rect x="3" y="4.5" width="22" height="13.5" rx="1"/><path d="M9 20.5v3.5h10v-3.5"/><line x1="8" y1="24" x2="20" y2="24"/><circle cx="24.5" cy="9" r="1.3"/>`],
-  ['bannery','Bannery',`<rect x="3" y="1" width="22" height="17" rx="2"/><line x1="14" y1="18" x2="14" y2="28"/><line x1="7" y1="28" x2="21" y2="28"/><line x1="7" y1="7" x2="14" y2="7"/><line x1="7" y1="11" x2="20" y2="11"/><line x1="7" y1="15" x2="16" y2="15"/>`],
-  ['tablet','Tablet',`<rect x="5" y="1" width="18" height="26" rx="2.5"/><rect x="7.5" y="4" width="13" height="18" rx="1"/><circle cx="14" cy="25" r="1.3"/><line x1="11" y1="2.5" x2="17" y2="2.5"/>`],
-  ['mobil','Mobil',`<rect x="8.5" y="1" width="11" height="26" rx="2.5"/><rect x="10.5" y="4.5" width="7" height="16" rx="1"/><circle cx="14" cy="25" r="1.3"/><line x1="11.5" y1="2.5" x2="16.5" y2="2.5"/>`],
+  ['tiskarna','Tiskárna','<rect x="5" y="10" width="22" height="14" rx="2"/><rect x="9" y="3" width="14" height="8" rx="1.5"/><rect x="9" y="20" width="14" height="7" rx="1.5"/><line x1="20" y1="15.5" x2="22.5" y2="15.5"/><circle cx="11" cy="15.5" r="1.3"/>'],
+  ['notebook','Notebook','<rect x="2" y="4" width="24" height="17" rx="2"/><rect x="4.5" y="6.5" width="19" height="11.5" rx="1"/><path d="M0 21h28l-2 3H2z"/><line x1="12" y1="23" x2="16" y2="23"/>'],
+  ['kasa','Kasa','<rect x="2" y="13" width="24" height="14" rx="2"/><path d="M7 13V7.5A3.5 3.5 0 0 1 10.5 4h7A3.5 3.5 0 0 1 21 7.5V13"/><rect x="10" y="19" width="8" height="5" rx="1.5"/><line x1="5" y1="17.5" x2="8" y2="17.5"/><line x1="11" y1="17.5" x2="14" y2="17.5"/><line x1="17" y1="17.5" x2="20" y2="17.5"/>'],
+  ['uctenk','Účtenková tiskárna','<rect x="6.5" y="2" width="15" height="20" rx="2"/><line x1="9.5" y1="8" x2="18.5" y2="8"/><line x1="9.5" y1="12" x2="18.5" y2="12"/><line x1="9.5" y1="16" x2="15" y2="16"/><path d="M11 22 Q14 27.5 17 22"/><rect x="9" y="0" width="10" height="3" rx="1"/>'],
+  ['terminal','Terminál','<rect x="8" y="1.5" width="12" height="25" rx="3"/><rect x="10.5" y="4.5" width="7" height="8" rx="1"/><line x1="10.5" y1="16.5" x2="12.5" y2="16.5"/><line x1="14.5" y1="16.5" x2="16.5" y2="16.5"/><line x1="10.5" y1="20" x2="12.5" y2="20"/><line x1="14.5" y1="20" x2="16.5" y2="20"/>'],
+  ['kamery','Kamery','<path d="M1 10.5h17a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H1a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1z"/><path d="M19 14l9-4.5v10L19 15z"/><circle cx="9.5" cy="15.5" r="3"/><circle cx="9.5" cy="15.5" r="1.2"/><circle cx="4" cy="7" r="2.2"/><line x1="4" y1="9.2" x2="4" y2="10.5"/>'],
+  ['televizory','Televizory','<rect x="1" y="2.5" width="26" height="18" rx="2"/><rect x="3" y="4.5" width="22" height="13.5" rx="1"/><path d="M9 20.5v3.5h10v-3.5"/><line x1="8" y1="24" x2="20" y2="24"/><circle cx="24.5" cy="9" r="1.3"/>'],
+  ['bannery','Bannery','<rect x="3" y="1" width="22" height="17" rx="2"/><line x1="14" y1="18" x2="14" y2="28"/><line x1="7" y1="28" x2="21" y2="28"/><line x1="7" y1="7" x2="14" y2="7"/><line x1="7" y1="11" x2="20" y2="11"/><line x1="7" y1="15" x2="16" y2="15"/>'],
+  ['tablet','Tablet','<rect x="5" y="1" width="18" height="26" rx="2.5"/><rect x="7.5" y="4" width="13" height="18" rx="1"/><circle cx="14" cy="25" r="1.3"/><line x1="11" y1="2.5" x2="17" y2="2.5"/>'],
+  ['mobil','Mobil','<rect x="8.5" y="1" width="11" height="26" rx="2.5"/><rect x="10.5" y="4.5" width="7" height="16" rx="1"/><circle cx="14" cy="25" r="1.3"/><line x1="11.5" y1="2.5" x2="16.5" y2="2.5"/>'],
 ];
 
+function hintText(id) {
+  const n = fotoPocty[id] || 0;
+  if (n === 0) return 'klepněte pro foto';
+  const s = n === 1 ? '1\u00a0fotka' : n < 5 ? n+'\u00a0fotky' : n+'\u00a0fotek';
+  return s + '\u00a0\u2022 klepněte pro další';
+}
+
 const grid = document.getElementById('grid');
-ITEMS.forEach(([id, name, icon]) => {
+ITEMS.forEach(function(item) {
+  const id = item[0], name = item[1], icon = item[2];
   const card = document.createElement('button');
   card.className = 'card locked';
   card.id = 'c-' + id;
-  card.innerHTML = `<img class="photo-bg" id="pb-${id}" alt=""><div class="scrim"></div><div class="icon-pill"><svg viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">${icon}</svg></div><div class="card-info"><div class="card-name">${name}</div><div class="card-hint" id="ch-${id}">nejprve zadejte provozovnu</div></div><div class="state-icon" id="si-${id}"><svg viewBox="0 0 14 14"><polyline points="2,7.5 5.5,11.5 12,3"/></svg></div>`;
+  card.innerHTML =
+    '<img class="photo-bg" id="pb-'+id+'" alt="">' +
+    '<div class="scrim"></div>' +
+    '<div class="icon-pill"><svg viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">'+icon+'</svg></div>' +
+    '<div class="card-info">' +
+      '<div class="card-name">'+name+'</div>' +
+      '<div class="card-hint" id="ch-'+id+'">nejprve zadejte provozovnu</div>' +
+    '</div>' +
+    '<div class="state-icon" id="si-'+id+'"><svg viewBox="0 0 14 14"><polyline points="2,7.5 5.5,11.5 12,3"/></svg></div>';
+  grid.appendChild(card);
 
-  // Input se vytvoří jednou — visibility:hidden funguje na iOS Safari, display:none ne
+  card.addEventListener('click', function() {
+    if (card.classList.contains('locked')) return;
+    if (card.classList.contains('uploading')) return;
+    if (!provozovna) { highlightProvozovna(); return; }
+    if (!account) { handleODClick(); return; }
+    spustiFoto(id, name, card);
+  });
+});
+
+function spustiFoto(id, name, card) {
+  // Vždy nový input element — zaručí funkčnost i po opakovaném použití
   const inp = document.createElement('input');
   inp.type = 'file';
   inp.accept = 'image/*';
-  // bez capture — aby iOS/Android nabídl výběr fotoaparát NEBO galerie
+  // Bez atributu capture → iOS/Android zobrazí dialog: Fotoaparát NEBO Galerie
+  inp.style.cssText = 'position:absolute;top:-1000px;left:-1000px;width:1px;height:1px;opacity:0.01;';
   document.body.appendChild(inp);
 
-  inp.addEventListener('change', async e => {
-    const file = e.target.files[0];
-    inp.value = ''; // reset — umožní nahrát stejný soubor znovu
-    if (!file) return;
-    await handleFileSelected(id, name, file, card);
+  inp.addEventListener('change', function() {
+    const file = inp.files && inp.files[0];
+    try { document.body.removeChild(inp); } catch(e) {}
+    if (file) nahrajFotku(id, name, card, file);
   });
 
-  card.addEventListener('click', () => {
-    if (card.classList.contains('locked') || card.classList.contains('uploading')) return;
-    if (!provozovna) { highlightProvozovna(); return; }
-    if (!account) { handleODClick(); return; }
-    inp.click(); // přímý synchronní click — funguje jako user gesture
-  });
+  // Malé zpoždění na Safari/iOS
+  setTimeout(function() { inp.click(); }, 50);
+}
 
-  grid.appendChild(card);
-});
-
-async function handleFileSelected(id, name, file, card) {
-  // náhled
+async function nahrajFotku(id, name, card, file) {
+  // Náhled
   const reader = new FileReader();
-  reader.onload = ev => { const pb = document.getElementById('pb-' + id); if (pb) pb.src = ev.target.result; };
+  reader.onload = function(e) {
+    const pb = document.getElementById('pb-'+id);
+    if (pb) pb.src = e.target.result;
+  };
   reader.readAsDataURL(file);
 
-  // stav uploading
+  // Stav: nahrávám
   card.classList.remove('done', 'error');
   card.classList.add('uploading');
-  const hint = document.getElementById('ch-' + id);
-  const si = document.getElementById('si-' + id);
-  hint.textContent = 'Nahrávám…';
+  const si = document.getElementById('si-'+id);
   si.className = 'state-icon ld visible';
   si.innerHTML = '';
+  document.getElementById('ch-'+id).textContent = 'Nahrávám…';
 
-  // token
   const token = await getToken();
   if (!token) {
     card.classList.remove('uploading'); card.classList.add('error');
     si.className = 'state-icon err visible';
     si.innerHTML = '<svg viewBox="0 0 14 14"><line x1="3" y1="3" x2="11" y2="11" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/><line x1="11" y1="3" x2="3" y2="11" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg>';
-    hint.textContent = 'Chyba přihlášení – klepněte znovu';
+    document.getElementById('ch-'+id).textContent = 'Chyba přihlášení – zkuste znovu';
     return;
   }
 
-  // upload
   let ok = false;
   try { ok = await uploadToOneDrive(token, name, provozovna, file); }
-  catch(e) { console.error('Upload error', e); }
+  catch(e) { console.error('Upload error:', e); }
 
   if (ok) {
-    uploaded[id] = (uploaded[id] || 0) + 1;
-    const cnt = uploaded[id];
-    const label = cnt === 1 ? '1 fotka' : cnt < 5 ? cnt + ' fotky' : cnt + ' fotek';
+    fotoPocty[id] = (fotoPocty[id] || 0) + 1;
+    uploaded[id] = fotoPocty[id];
     card.classList.remove('uploading', 'error');
     card.classList.add('done');
     si.className = 'state-icon ok visible';
     si.innerHTML = '<svg viewBox="0 0 14 14"><polyline points="2,7.5 5.5,11.5 12,3" stroke="#fff" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-    hint.textContent = label + ' uloženo · klepněte pro další';
+    document.getElementById('ch-'+id).textContent = hintText(id);
     updateFooter();
   } else {
     card.classList.remove('uploading');
     card.classList.add('error');
     si.className = 'state-icon err visible';
     si.innerHTML = '<svg viewBox="0 0 14 14"><line x1="3" y1="3" x2="11" y2="11" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/><line x1="11" y1="3" x2="3" y2="11" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg>';
-    hint.textContent = 'Nahrání selhalo – klepněte znovu';
+    document.getElementById('ch-'+id).textContent = 'Nahrání selhalo – zkuste znovu';
   }
 }
 
-function setCardState(card, id, state, hint) {
-  card.classList.remove('uploading', 'done', 'error');
-  const si = document.getElementById('si-' + id);
-  si.className = 'state-icon';
-  if (state === 'uploading') { card.classList.add('uploading'); si.classList.add('ld', 'visible'); si.innerHTML = ''; }
-  else if (state === 'done') { card.classList.add('done'); si.classList.add('ok', 'visible'); si.innerHTML = '<svg viewBox="0 0 14 14"><polyline points="2,7.5 5.5,11.5 12,3" stroke="#fff" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>'; }
-  else if (state === 'error') { card.classList.add('error'); si.classList.add('err', 'visible'); si.innerHTML = '<svg viewBox="0 0 14 14"><line x1="3" y1="3" x2="11" y2="11" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/><line x1="11" y1="3" x2="3" y2="11" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg>'; }
-  document.getElementById('ch-' + id).textContent = hint;
-}
-
 function updateGrid() {
-  const ready = !!provozovna && !!account;
-  document.querySelectorAll('.card').forEach(c => {
+  var ready = !!provozovna && !!account;
+  document.querySelectorAll('.card').forEach(function(c) {
+    var id = c.id.replace('c-','');
+    if (c.classList.contains('uploading')) return;
     if (ready) {
       c.classList.remove('locked');
-      const id = c.id.replace('c-', '');
-      if (!c.classList.contains('uploading') && !c.classList.contains('error')) {
-          const cnt2 = uploaded[id] || 0;
-          const lbl2 = cnt2 === 0 ? 'klepněte pro foto' : (cnt2 === 1 ? '1 fotka' : cnt2 < 5 ? cnt2+' fotky' : cnt2+' fotek') + ' uloženo · klepněte pro další';
-          document.getElementById('ch-' + id).textContent = lbl2;
-        }
+      if (!c.classList.contains('error'))
+        document.getElementById('ch-'+id).textContent = hintText(id);
     } else {
-      if (!c.classList.contains('uploading') && !c.classList.contains('done') && !c.classList.contains('error')) {
-        c.classList.add('locked');
-        const id = c.id.replace('c-', '');
-        document.getElementById('ch-' + id).textContent = !provozovna ? 'nejprve zadejte provozovnu' : !account ? 'nejprve se přihlaste do OneDrive' : 'klepněte pro foto';
-      }
+      c.classList.add('locked');
+      if (!c.classList.contains('error'))
+        document.getElementById('ch-'+id).textContent =
+          !provozovna ? 'nejprve zadejte provozovnu' : 'nejprve se přihlaste do OneDrive';
     }
   });
   updateFooter();
@@ -672,37 +452,36 @@ function updateGrid() {
 
 document.getElementById('prov-input').addEventListener('input', function() {
   provozovna = this.value.trim();
-  this.classList.toggle('invalid', false);
-  updateGrid(); updateFooter();
+  this.classList.remove('invalid');
+  updateGrid();
 });
 
 function highlightProvozovna() {
-  const el = document.getElementById('prov-input');
+  var el = document.getElementById('prov-input');
   el.classList.add('invalid'); el.focus();
-  setTimeout(() => el.classList.remove('invalid'), 2000);
+  setTimeout(function() { el.classList.remove('invalid'); }, 2000);
 }
 
 function updateFooter() {
-  const n = Object.keys(uploaded).length;
-  document.getElementById('ft-cnt').textContent = `${n} / 10`;
+  var n = Object.keys(fotoPocty).length;
+  document.getElementById('ft-cnt').textContent = n + ' / 10';
   document.getElementById('ft-txt').textContent =
-    !provozovna && !account ? 'Zadejte číslo provozovny a přihlaste se do OneDrive' :
-    !provozovna             ? 'Zadejte číslo provozovny' :
-    !account                ? 'Přihlaste se do OneDrive' :
-    n === 0  ? `Připraveno – provozovna: ${provozovna}` :
+    !provozovna && !account ? 'Zadejte číslo provozovny a přihlaste se' :
+    !provozovna ? 'Zadejte číslo provozovny' :
+    !account ? 'Přihlaste se do OneDrive' :
+    n === 0 ? 'Připraveno – provozovna: ' + provozovna :
     n === 10 ? 'Všechna zařízení zdokumentována ✓' :
-               `Nahráno ${n} z 10 – provozovna: ${provozovna}`;
-  document.getElementById('xbtn').disabled = n === 0;
+    'Nahráno ' + n + ' z 10 – provozovna: ' + provozovna;
+  document.getElementById('xbtn').disabled = (n === 0);
 }
 
 function doExport() {
-  const ents = Object.values(uploaded);
-  if (!ents.length) return;
-  alert(`Fotky jsou uloženy v OneDrive:\nOneDrive › Fotodokumentace › ${provozovna || '–'}`);
+  if (!Object.keys(fotoPocty).length) return;
+  alert('Fotky jsou uloženy v OneDrive:\nOneDrive › Fotodokumentace › ' + (provozovna || '–'));
 }
 
 (function boot() {
-  const cfg = loadCfg();
+  var cfg = loadCfg();
   if (cfg.clientId) { initMsal(cfg.clientId, cfg.tenant || 'common'); }
   else { openModal(); }
   updateFooter();
