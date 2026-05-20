@@ -105,6 +105,8 @@ header p { margin-top:6px; font-size:.82rem; font-weight:300; color:rgba(255,255
 .modal-hint { font-size:.72rem;color:rgba(255,255,255,.30);text-align:center;margin-top:14px;line-height:1.5; }
 .modal-hint a { color:rgba(160,130,255,.7);text-decoration:none; }
 .modal-hint a:hover { color:rgba(160,130,255,1); }
+.count-badge { position:absolute; top:-7px; right:-7px; min-width:20px; height:20px; border-radius:10px; background:rgba(63,200,122,.92); border:2px solid rgba(8,0,26,.80); font-size:.62rem; font-weight:700; color:#fff; display:flex; align-items:center; justify-content:center; padding:0 4px; letter-spacing:.01em; opacity:0; transform:scale(.4); transition:opacity .22s,transform .3s cubic-bezier(.34,1.56,.64,1); pointer-events:none; box-shadow:0 2px 8px rgba(63,200,122,.45); }
+.count-badge.visible { opacity:1; transform:scale(1); }
 @media (max-width:520px){ .grid{gap:10px} .card{padding:16px;gap:14px;min-height:84px;border-radius:18px} .icon-pill{width:46px;height:46px;border-radius:13px} .icon-pill svg{width:24px;height:24px} .card-name{font-size:.84rem} .topbar{flex-wrap:wrap} }
 </style>
 </head>
@@ -347,7 +349,7 @@ ITEMS.forEach(function(item) {
   card.innerHTML =
     '<img class="photo-bg" id="pb-'+id+'" alt="">' +
     '<div class="scrim"></div>' +
-    '<div class="icon-pill"><svg viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">'+icon+'</svg></div>' +
+    '<div class="icon-pill"><svg viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">'+icon+'</svg><span class="count-badge" id="cb-'+id+'"></span></div>' +
     '<div class="card-info">' +
       '<div class="card-name">'+name+'</div>' +
       '<div class="card-hint" id="ch-'+id+'">nejprve zadejte provozovnu</div>' +
@@ -416,6 +418,8 @@ async function nahrajFotku(id, name, card, file) {
   if (ok) {
     fotoPocty[id] = (fotoPocty[id] || 0) + 1;
     uploaded[id] = fotoPocty[id];
+    const badge = document.getElementById('cb-'+id);
+    if (badge) { badge.textContent = fotoPocty[id]; badge.classList.add('visible'); }
     card.classList.remove('uploading', 'error');
     card.classList.add('done');
     si.className = 'state-icon ok visible';
