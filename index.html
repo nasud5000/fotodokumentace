@@ -320,12 +320,18 @@ async function uploadToOneDrive(token, deviceName, provName, file) {
   return true;
 }
 
-async function uploadTxtToOneDrive(token, deviceName, provName) {
+async function uploadAbsenceList(token, provName, absentNames) {
   const clean = s => s.replace(/[\\/: *?"<>|]/g, '_').trim();
-  const fname = clean(deviceName) + '_nenalezeno.txt';
-  const path = 'Fotodokumentace/' + clean(provName) + '/' + clean(deviceName) + '/' + fname;
+  const path = 'Fotodokumentace/' + clean(provName) + '/Absence_zarizeni.txt';
   const url = 'https://graph.microsoft.com/v1.0/me/drive/root:/' + encodeURI(path) + ':/content';
-  const body = 'ABSENCE ZAŘÍZENÍ';
+  const d = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  const datum = pad(d.getDate()) + '.' + pad(d.getMonth()+1) + '.' + d.getFullYear() + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+  let body = 'ABSENCE ZAŘÍZENÍ\r\n';
+  body += 'Provozovna: ' + provName + '\r\n';
+  body += 'Datum: ' + datum + '\r\n\r\n';
+  body += 'Na prodejně se nenacházejí tato zařízení:\r\n';
+  absentNames.forEach(function(n){ body += '\u2022 ' + n + '\r\n'; });
   const r = await fetch(url, { method:'PUT', headers:{'Authorization':'Bearer '+token,'Content-Type':'text/plain; charset=utf-8'}, body: body });
   return r.ok;
 }
@@ -519,14 +525,15 @@ async function doExport() {
   const chybejici = ITEMS.filter(function(it){ return !(fotoPocty[it[0]] > 0); });
 
   if (chybejici.length === 0) {
-    alert('Všechna zařízení mají fotku.\n\nUloženo v OneDrive:\nFotodokumentace › ' + provozovna);
+    alert('Všechna zařízení mají fotku – seznam absence není potřeba.\n\nUloženo v OneDrive:\nFotodokumentace › ' + provozovna);
     return;
   }
 
-  if (!confirm('Pro ' + chybejici.length + ' nezdokumentovaných položek se do jejich složky vytvoří poznámka „Zařízení se na prodejně nenachází".\n\nPokračovat?')) return;
+  if (!confirm('Do složky provozovny se vytvoří souhrnný seznam ' + chybejici.length + ' chybějících zařízení (Absence_zarizeni.txt).\n\nPokračovat?')) return;
 
   const origTxt = ftTxt.textContent;
   xbtn.disabled = true;
+  ftTxt.textContent = 'Zapisuji seznam absence…';
   const token = await getToken();
   if (!token) {
     alert('Chyba přihlášení – přihlaste se prosím znovu do OneDrive.');
@@ -535,21 +542,21 @@ async function doExport() {
     return;
   }
 
-  let ok = 0, fail = 0;
-  for (let i = 0; i < chybejici.length; i++) {
-    const it = chybejici[i];
-    ftTxt.textContent = 'Zapisuji poznámky… ' + (i+1) + ' / ' + chybejici.length;
-    let r = false;
-    try { r = await uploadTxtToOneDrive(token, it[1], provozovna); }
-    catch(e) { console.error('Txt upload error:', e); }
-    if (r) { ok++; markNotPresent(it[0]); } else { fail++; }
-  }
+  const names = chybejici.map(function(it){ return it[1]; });
+  let ok = false;
+  try { ok = await uploadAbsenceList(token, provozovna, names); }
+  catch(e) { console.error('Absence list error:', e); }
+
+  if (ok) chybejici.forEach(function(it){ markNotPresent(it[0]); });
 
   xbtn.disabled = false;
   updateFooter();
-  alert('Hotovo.\n\nPoznámky vytvořeny: ' + ok +
-        (fail ? '\nSelhalo: ' + fail + ' (zkuste export znovu)' : '') +
-        '\n\nUloženo v OneDrive:\nFotodokumentace › ' + provozovna);
+
+  if (ok) {
+    alert('Hotovo.\n\nSeznam absence (' + names.length + ' zařízení) uložen:\nFotodokumentace › ' + provozovna + ' › Absence_zarizeni.txt');
+  } else {
+    alert('Uložení seznamu selhalo – zkuste export znovu.');
+  }
 }
 
 (function boot() {
