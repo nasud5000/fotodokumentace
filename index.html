@@ -70,6 +70,10 @@ header p { margin-top:6px; font-size:.82rem; font-weight:300; color:rgba(255,255
 .state-icon.visible { opacity:1;transform:scale(1); }
 .state-icon.ok { background:rgba(50,200,110,.88);border:1px solid rgba(120,245,165,.55); }
 .state-icon.err { background:rgba(220,60,60,.80);border:1px solid rgba(248,113,113,.50); }
+.state-icon.absent { background:rgba(150,155,170,.65);border:1px solid rgba(200,205,220,.50); }
+.card.absent { border-color:rgba(150,155,170,.32);background:rgba(150,155,170,.07); }
+.card.absent .card-hint { color:rgba(205,210,225,.62); }
+.card.absent .icon-pill svg { stroke:rgba(210,215,230,.78); }
 .state-icon.ld { background:transparent;border:2px solid rgba(96,165,250,.80);border-top-color:transparent;animation:spin .7s linear infinite; }
 @keyframes spin { to { transform:scale(1) rotate(360deg); } }
 .state-icon svg { width:14px;height:14px;stroke:#fff;stroke-width:2.5;fill:none; }
@@ -316,14 +320,22 @@ async function uploadToOneDrive(token, deviceName, provName, file) {
   return true;
 }
 
-/* ── KARTY A UPLOAD ─────────────────────────────────────────── */
+async function uploadTxtToOneDrive(token, deviceName, provName) {
+  const clean = s => s.replace(/[\\/: *?"<>|]/g, '_').trim();
+  const fname = clean(deviceName) + '_nenalezeno.txt';
+  const path = 'Fotodokumentace/' + clean(provName) + '/' + clean(deviceName) + '/' + fname;
+  const url = 'https://graph.microsoft.com/v1.0/me/drive/root:/' + encodeURI(path) + ':/content';
+  const body = 'ABSENCE ZAŘÍZENÍ';
+  const r = await fetch(url, { method:'PUT', headers:{'Authorization':'Bearer '+token,'Content-Type':'text/plain; charset=utf-8'}, body: body });
+  return r.ok;
+}
 
 const fotoPocty = {};  // { id: počet nahraných fotek }
 
 const ITEMS = [
   ['tiskarna','Tiskárna','<rect x="5" y="10" width="22" height="14" rx="2"/><rect x="9" y="3" width="14" height="8" rx="1.5"/><rect x="9" y="20" width="14" height="7" rx="1.5"/><line x1="20" y1="15.5" x2="22.5" y2="15.5"/><circle cx="11" cy="15.5" r="1.3"/>'],
   ['notebook','Notebook','<rect x="2" y="4" width="24" height="17" rx="2"/><rect x="4.5" y="6.5" width="19" height="11.5" rx="1"/><path d="M0 21h28l-2 3H2z"/><line x1="12" y1="23" x2="16" y2="23"/>'],
-  ['kasa','Kasa','<rect x="2" y="13" width="24" height="14" rx="2"/><path d="M7 13V7.5A3.5 3.5 0 0 1 10.5 4h7A3.5 3.5 0 0 1 21 7.5V13"/><rect x="10" y="19" width="8" height="5" rx="1.5"/><line x1="5" y1="17.5" x2="8" y2="17.5"/><line x1="11" y1="17.5" x2="14" y2="17.5"/><line x1="17" y1="17.5" x2="20" y2="17.5"/>'],
+  ['vzhled','Vzhled prodejny','<path d="M5 4H23l3 7H2z"/><line x1="9.5" y1="4" x2="8.3" y2="11"/><line x1="14" y1="4" x2="14" y2="11"/><line x1="18.5" y1="4" x2="19.7" y2="11"/><path d="M4 11v15h20V11"/><rect x="7" y="16" width="5.5" height="6" rx="0.5"/><rect x="14.5" y="16" width="6" height="10" rx="0.5"/>'],
   ['uctenk','Účtenková tiskárna','<rect x="6.5" y="2" width="15" height="20" rx="2"/><line x1="9.5" y1="8" x2="18.5" y2="8"/><line x1="9.5" y1="12" x2="18.5" y2="12"/><line x1="9.5" y1="16" x2="15" y2="16"/><path d="M11 22 Q14 27.5 17 22"/><rect x="9" y="0" width="10" height="3" rx="1"/>'],
   ['terminal','Terminál','<rect x="8" y="1.5" width="12" height="25" rx="3"/><rect x="10.5" y="4.5" width="7" height="8" rx="1"/><line x1="10.5" y1="16.5" x2="12.5" y2="16.5"/><line x1="14.5" y1="16.5" x2="16.5" y2="16.5"/><line x1="10.5" y1="20" x2="12.5" y2="20"/><line x1="14.5" y1="20" x2="16.5" y2="20"/>'],
   ['kamery','Kamery','<path d="M1 10.5h17a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H1a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1z"/><path d="M19 14l9-4.5v10L19 15z"/><circle cx="9.5" cy="15.5" r="3"/><circle cx="9.5" cy="15.5" r="1.2"/><circle cx="4" cy="7" r="2.2"/><line x1="4" y1="9.2" x2="4" y2="10.5"/>'],
@@ -343,6 +355,20 @@ function hintText(id) {
   if (n === 0) return 'klepněte pro foto';
   const s = n === 1 ? '1\u00a0fotka' : n < 5 ? n+'\u00a0fotky' : n+'\u00a0fotek';
   return s + '\u00a0\u2022 klepněte pro další';
+}
+
+function markNotPresent(id) {
+  const card = document.getElementById('c-' + id);
+  if (!card || (fotoPocty[id] > 0)) return;
+  card.classList.remove('error', 'done');
+  card.classList.add('absent');
+  const si = document.getElementById('si-' + id);
+  if (si) {
+    si.className = 'state-icon absent visible';
+    si.innerHTML = '<svg viewBox="0 0 14 14"><line x1="3.5" y1="7" x2="10.5" y2="7" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg>';
+  }
+  const ch = document.getElementById('ch-' + id);
+  if (ch) ch.textContent = 'Nenachází se na prodejně';
 }
 
 const grid = document.getElementById('grid');
@@ -425,7 +451,7 @@ async function nahrajFotku(id, name, card, file) {
     uploaded[id] = fotoPocty[id];
     const badge = document.getElementById('cb-'+id);
     if (badge) { badge.textContent = fotoPocty[id]; badge.classList.add('visible'); }
-    card.classList.remove('uploading', 'error');
+    card.classList.remove('uploading', 'error', 'absent');
     card.classList.add('done');
     si.className = 'state-icon ok visible';
     si.innerHTML = '<svg viewBox="0 0 14 14"><polyline points="2,7.5 5.5,11.5 12,3" stroke="#fff" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -481,12 +507,49 @@ function updateFooter() {
     n === 0 ? 'Připraveno – provozovna: ' + provozovna :
     n === 15 ? 'Všechna zařízení zdokumentována ✓' :
     'Nahráno ' + n + ' z 15 – provozovna: ' + provozovna;
-  document.getElementById('xbtn').disabled = (n === 0);
+  document.getElementById('xbtn').disabled = !(provozovna && account);
 }
 
-function doExport() {
-  if (!Object.keys(fotoPocty).length) return;
-  alert('Fotky jsou uloženy v OneDrive:\nOneDrive › Fotodokumentace › ' + (provozovna || '–'));
+async function doExport() {
+  if (!provozovna || !account) return;
+  const xbtn = document.getElementById('xbtn');
+  const ftTxt = document.getElementById('ft-txt');
+
+  // Položky bez nahrané fotky
+  const chybejici = ITEMS.filter(function(it){ return !(fotoPocty[it[0]] > 0); });
+
+  if (chybejici.length === 0) {
+    alert('Všechna zařízení mají fotku.\n\nUloženo v OneDrive:\nFotodokumentace › ' + provozovna);
+    return;
+  }
+
+  if (!confirm('Pro ' + chybejici.length + ' nezdokumentovaných položek se do jejich složky vytvoří poznámka „Zařízení se na prodejně nenachází".\n\nPokračovat?')) return;
+
+  const origTxt = ftTxt.textContent;
+  xbtn.disabled = true;
+  const token = await getToken();
+  if (!token) {
+    alert('Chyba přihlášení – přihlaste se prosím znovu do OneDrive.');
+    xbtn.disabled = false;
+    ftTxt.textContent = origTxt;
+    return;
+  }
+
+  let ok = 0, fail = 0;
+  for (let i = 0; i < chybejici.length; i++) {
+    const it = chybejici[i];
+    ftTxt.textContent = 'Zapisuji poznámky… ' + (i+1) + ' / ' + chybejici.length;
+    let r = false;
+    try { r = await uploadTxtToOneDrive(token, it[1], provozovna); }
+    catch(e) { console.error('Txt upload error:', e); }
+    if (r) { ok++; markNotPresent(it[0]); } else { fail++; }
+  }
+
+  xbtn.disabled = false;
+  updateFooter();
+  alert('Hotovo.\n\nPoznámky vytvořeny: ' + ok +
+        (fail ? '\nSelhalo: ' + fail + ' (zkuste export znovu)' : '') +
+        '\n\nUloženo v OneDrive:\nFotodokumentace › ' + provozovna);
 }
 
 (function boot() {
