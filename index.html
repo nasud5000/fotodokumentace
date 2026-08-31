@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="cs">
 <head>
@@ -81,6 +80,8 @@ header p { margin-top:6px; font-size:.82rem; font-weight:300; color:rgba(255,255
 .card.error .icon-pill svg { stroke:rgba(252,165,165,.95); }
 .card-info { width:100%;min-width:0; }
 .card-name { font-size:.82rem;font-weight:600;color:rgba(255,255,255,.92);letter-spacing:.005em;text-align:center;line-height:1.22;white-space:normal;overflow-wrap:break-word;word-break:normal;-webkit-hyphens:none;hyphens:none; }
+.card-sub { font-size:.63rem;font-weight:400;color:rgba(255,255,255,.5);text-align:center;line-height:1.2;margin-top:1px;white-space:nowrap; }
+.card.done .card-sub { color:rgba(160,235,190,.6); }
 .card-hint { margin-top:4px;font-size:.66rem;font-weight:300;color:rgba(255,255,255,.38);transition:color .2s;text-align:center;line-height:1.3;overflow-wrap:break-word; }
 .card.done .card-hint { color:rgba(120,245,165,.70); }
 .card.error .card-hint { color:rgba(252,165,165,.80); }
@@ -137,6 +138,7 @@ header p { margin-top:6px; font-size:.82rem; font-weight:300; color:rgba(255,255
   .icon-pill{width:42px;height:42px;border-radius:12px}
   .icon-pill svg{width:23px;height:23px}
   .card-name{font-size:.74rem;letter-spacing:-.005em}
+  .card-sub{font-size:.57rem}
   .card-hint{font-size:.6rem;margin-top:3px}
   .topbar{flex-wrap:wrap}
 }
@@ -144,6 +146,7 @@ header p { margin-top:6px; font-size:.82rem; font-weight:300; color:rgba(255,255
   .grid{gap:7px}
   .card{padding:12px 4px 10px;min-height:106px}
   .card-name{font-size:.69rem}
+  .card-sub{font-size:.54rem}
   .card-hint{font-size:.57rem}
   .icon-pill{width:38px;height:38px}
   .icon-pill svg{width:21px;height:21px}
@@ -151,12 +154,12 @@ header p { margin-top:6px; font-size:.82rem; font-weight:300; color:rgba(255,255
 </style>
 </head>
 <body>
- 
+
 <div class="bg">
   <div class="blob b1"></div><div class="blob b2"></div>
   <div class="blob b3"></div><div class="blob b4"></div><div class="blob b5"></div>
 </div>
- 
+
 <div class="modal-wrap" id="modal-wrap">
   <div class="modal">
     <h2>Nastavení připojení k OneDrive</h2>
@@ -183,7 +186,7 @@ header p { margin-top:6px; font-size:.82rem; font-weight:300; color:rgba(255,255
     </div>
   </div>
 </div>
- 
+
 <div class="shell">
   <header>
     <h1>Fotodokumentace zařízení</h1>
@@ -205,7 +208,7 @@ header p { margin-top:6px; font-size:.82rem; font-weight:300; color:rgba(255,255
     </button>
   </div>
   <div class="grid" id="grid"></div>
- 
+
   <div class="pozn glass">
     <div class="pozn-hd">
       <label for="pozn-text">Poznámky k provozovně</label>
@@ -218,28 +221,28 @@ header p { margin-top:6px; font-size:.82rem; font-weight:300; color:rgba(255,255
       <button class="xbtn" id="pozn-btn" disabled onclick="ulozPoznamky()">Uložit poznámky</button>
     </div>
   </div>
- 
+
   <div class="footer glass">
     <span class="ft-txt" id="ft-txt">Zadejte číslo provozovny a přihlaste se</span>
     <span class="ft-cnt" id="ft-cnt">0 / 15</span>
     <button class="xbtn" id="xbtn" disabled onclick="doExport()">Exportovat</button>
   </div>
 </div>
- 
+
 <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.30.0/lib/msal-browser.min.js" integrity="sha384-YnOjsoOxSYo65h1BXWnSq24bFbqW8HfzMWSEQxYEMRmjW9Vl1J3HZI3iZxqNYvIi" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script>
 let msalInstance = null;
 let account = null;
 let provozovna = '';
 const uploaded = {};
- 
+
 function isRestrictedEnv() {
   const ua = navigator.userAgent || '';
   return /Teams\//i.test(ua) || /Electron/i.test(ua) || window.self !== window.top;
 }
 function isFileProtocol() { return window.location.protocol === 'file:'; }
 function cleanRedirectUri() { return window.location.href.split('?')[0].split('#')[0]; }
- 
+
 function initMsal(clientId, tenant) {
   const authority = (tenant && tenant !== 'common')
     ? 'https://login.microsoftonline.com/' + tenant
@@ -258,7 +261,7 @@ function initMsal(clientId, tenant) {
     }).catch(e => console.warn('MSAL redirect:', e));
   });
 }
- 
+
 function openModal() {
   const cfg = loadCfg();
   document.getElementById('inp-clientid').value = cfg.clientId || '';
@@ -285,7 +288,7 @@ function saveSettings() {
   closeModal(); initMsal(cid, ten); setODState('idle');
 }
 function loadCfg() { try { return JSON.parse(localStorage.getItem('fotodoc_cfg') || '{}'); } catch { return {}; } }
- 
+
 function handleODClick() {
   if (!msalInstance) { openModal(); return; }
   if (account) { signOut(); return; }
@@ -342,7 +345,7 @@ async function getToken() {
     catch { return null; }
   }
 }
- 
+
 async function uploadToOneDrive(token, deviceName, provName, file) {
   const clean = s => s.replace(/[\\/: *?"<>|]/g, '_').trim();
   // Časové razítko s přesností na milisekundy (místní čas)
@@ -367,7 +370,7 @@ async function uploadToOneDrive(token, deviceName, provName, file) {
   }
   const fname = clean(deviceName) + '_' + ts + '_' + seq + '_' + rand + '.' + ext;
   const path = ['Fotodokumentace', clean(provName), clean(deviceName), fname].map(encodeURIComponent).join('/');
- 
+
   // Jediné volání přímo na graph.microsoft.com (podporuje soubory do 250 MB).
   // Nepoužíváme upload session – ta by data posílala na cizí doménu,
   // kterou by musela povolit Content-Security-Policy.
@@ -379,7 +382,7 @@ async function uploadToOneDrive(token, deviceName, provName, file) {
   });
   return r.ok;
 }
- 
+
 async function uploadAbsenceList(token, provName, absentNames) {
   const clean = s => s.replace(/[\\/: *?"<>|]/g, '_').trim();
   const path = ['Fotodokumentace', clean(provName), 'Absence_zarizeni.txt'].map(encodeURIComponent).join('/');
@@ -395,7 +398,7 @@ async function uploadAbsenceList(token, provName, absentNames) {
   const r = await fetch(url, { method:'PUT', headers:{'Authorization':'Bearer '+token,'Content-Type':'text/plain; charset=utf-8'}, body: body });
   return r.ok;
 }
- 
+
 async function uploadPoznamky(token, provName, text) {
   const clean = s => s.replace(/[\\/: *?"<>|]/g, '_').trim();
   const path = ['Fotodokumentace', clean(provName), 'Poznamky.txt'].map(encodeURIComponent).join('/');
@@ -410,14 +413,14 @@ async function uploadPoznamky(token, provName, text) {
   const r = await fetch(url, { method:'PUT', headers:{'Authorization':'Bearer '+token,'Content-Type':'text/plain; charset=utf-8'}, body: body });
   return r.ok;
 }
- 
+
 const fotoPocty = {};  // { id: počet nahraných fotek }
 let fotoSekvence = 0;  // pořadové číslo fotky v rámci relace (ochrana proti kolizi názvů)
- 
+
 const ITEMS = [
   ['pos1','POS1','<rect x="5" y="2" width="18" height="18" rx="2"/><rect x="7.5" y="4.5" width="13" height="8" rx="1"/><line x1="7.5" y1="16" x2="9.5" y2="16"/><line x1="11.5" y1="16" x2="13.5" y2="16"/><line x1="15.5" y1="16" x2="17.5" y2="16"/><path d="M11 20v5"/><rect x="6" y="23" width="16" height="4" rx="1.5"/><line x1="9" y1="25" x2="19" y2="25"/>'],
   ['pos2','POS2','<rect x="5" y="2" width="18" height="18" rx="2"/><rect x="7.5" y="4.5" width="13" height="8" rx="1"/><line x1="7.5" y1="16" x2="9.5" y2="16"/><line x1="11.5" y1="16" x2="13.5" y2="16"/><line x1="15.5" y1="16" x2="17.5" y2="16"/><path d="M11 20v5"/><rect x="6" y="23" width="16" height="4" rx="1.5"/><line x1="9" y1="25" x2="19" y2="25"/>'],
-  ['pos3','POS3','<rect x="5" y="2" width="18" height="18" rx="2"/><rect x="7.5" y="4.5" width="13" height="8" rx="1"/><line x1="7.5" y1="16" x2="9.5" y2="16"/><line x1="11.5" y1="16" x2="13.5" y2="16"/><line x1="15.5" y1="16" x2="17.5" y2="16"/><path d="M11 20v5"/><rect x="6" y="23" width="16" height="4" rx="1.5"/><line x1="9" y1="25" x2="19" y2="25"/>'],
+  ['objtiskarna','Objednávková tiskárna','<rect x="4" y="9" width="20" height="11" rx="2"/><rect x="8" y="3" width="12" height="6" rx="1"/><path d="M9 20v6h10v-6"/><line x1="11.5" y1="22.5" x2="16.5" y2="22.5"/><line x1="11.5" y1="24.5" x2="15" y2="24.5"/><circle cx="20" cy="13" r="1.1"/>'],
   ['uctenk','Účtenková tiskárna','<rect x="6.5" y="2" width="15" height="20" rx="2"/><line x1="9.5" y1="8" x2="18.5" y2="8"/><line x1="9.5" y1="12" x2="18.5" y2="12"/><line x1="9.5" y1="16" x2="15" y2="16"/><path d="M11 22 Q14 27.5 17 22"/><rect x="9" y="0" width="10" height="3" rx="1"/>'],
   ['samoobsluzna','Samoobslužná pokladna','<rect x="5" y="1.5" width="18" height="12" rx="1.8"/><rect x="7.5" y="4" width="13" height="7" rx="0.8"/><path d="M9 13.5v2.5h10v-2.5"/><rect x="3" y="16" width="22" height="10.5" rx="1.8"/><line x1="7" y1="20" x2="13" y2="20"/><line x1="7" y1="23" x2="11" y2="23"/><circle cx="20" cy="21.5" r="2.2"/>'],
   ['terminal','Terminál','<rect x="8" y="1.5" width="12" height="25" rx="3"/><rect x="10.5" y="4.5" width="7" height="8" rx="1"/><line x1="10.5" y1="16.5" x2="12.5" y2="16.5"/><line x1="14.5" y1="16.5" x2="16.5" y2="16.5"/><line x1="10.5" y1="20" x2="12.5" y2="20"/><line x1="14.5" y1="20" x2="16.5" y2="20"/>'],
@@ -434,13 +437,13 @@ const ITEMS = [
   ['rack','RACK','<rect x="4" y="1" width="20" height="26" rx="2"/><rect x="6" y="4" width="16" height="3" rx="1"/><rect x="6" y="9" width="16" height="3" rx="1"/><rect x="6" y="14" width="16" height="3" rx="1"/><rect x="6" y="19" width="16" height="3" rx="1"/><circle cx="20" cy="5.5" r="1"/><circle cx="20" cy="10.5" r="1"/><circle cx="20" cy="15.5" r="1"/><circle cx="20" cy="20.5" r="1"/>'],
   ['podpultem','Pod pultem','<rect x="2" y="14" width="24" height="12" rx="2"/><line x1="2" y1="19" x2="26" y2="19"/><line x1="8" y1="14" x2="8" y2="26"/><line x1="20" y1="14" x2="20" y2="26"/><path d="M4 14 Q14 4 24 14"/><circle cx="14" cy="22" r="1.5"/>'],
 ];
- 
+
 function hintText(id) {
   // Počet fotek zobrazuje odznak na ikoně, popisek proto zůstává krátký
   const n = fotoPocty[id] || 0;
   return n === 0 ? 'klepněte pro foto' : 'klepněte pro další';
 }
- 
+
 function markNotPresent(id) {
   const card = document.getElementById('c-' + id);
   if (!card || (fotoPocty[id] > 0)) return;
@@ -454,14 +457,20 @@ function markNotPresent(id) {
   const ch = document.getElementById('ch-' + id);
   if (ch) ch.textContent = 'Nenachází se na prodejně';
 }
- 
+
 const grid = document.getElementById('grid');
 /* Nadpis sekce se vloží před kartu s uvedeným id */
 const SEKCE = {
   'pos1':     'Prodejní HW',
   'tiskarna': 'Síťový HW'
 };
- 
+
+/* Doplňující popisek pod názvem karty (menším písmem v závorce) */
+const PODNAZEV = {
+  'pos1': 'Hlavní',
+  'pos2': '+ POS3'
+};
+
 ITEMS.forEach(function(item) {
   const id = item[0], name = item[1], icon = item[2];
   if (SEKCE[id]) {
@@ -483,12 +492,14 @@ ITEMS.forEach(function(item) {
     '<div class="icon-pill"><svg viewBox="0 0 28 28" xmlns="http://www.w3.org/2000/svg">'+icon+'</svg><span class="count-badge" id="cb-'+id+'"></span></div>' +
     '<div class="card-info">' +
       '<div class="card-name"></div>' +
-      '<div class="card-hint" id="ch-'+id+'">nejprve zadejte provozovnu</div>' +
+      (PODNAZEV[id] ? '<div class="card-sub"></div>' : '') +
+      '<div class="card-hint" id="ch-'+id+'">zadejte provozovnu</div>' +
     '</div>' +
     '<div class="state-icon" id="si-'+id+'"><svg viewBox="0 0 14 14"><polyline points="2,7.5 5.5,11.5 12,3"/></svg></div>';
   card.querySelector('.card-name').textContent = name;
+  if (PODNAZEV[id]) card.querySelector('.card-sub').textContent = '(' + PODNAZEV[id] + ')';
   grid.appendChild(card);
- 
+
   card.addEventListener('click', function() {
     if (card.classList.contains('locked')) return;
     if (card.classList.contains('uploading')) return;
@@ -497,7 +508,7 @@ ITEMS.forEach(function(item) {
     spustiFoto(id, name, card);
   });
 });
- 
+
 function spustiFoto(id, name, card) {
   // Vždy nový input element — zaručí funkčnost i po opakovaném použití
   const inp = document.createElement('input');
@@ -507,22 +518,22 @@ function spustiFoto(id, name, card) {
   // Bez atributu accept a capture → iOS/Android nabídne Fotoaparát, Galerii i Soubory
   inp.style.cssText = 'position:absolute;top:-1000px;left:-1000px;width:1px;height:1px;opacity:0.01;';
   document.body.appendChild(inp);
- 
+
   inp.addEventListener('change', function() {
     const files = inp.files ? Array.prototype.slice.call(inp.files) : [];
     try { document.body.removeChild(inp); } catch(e) {}
     if (files.length) nahrajFotku(id, name, card, files);
   });
- 
+
   // Malé zpoždění na Safari/iOS
   setTimeout(function() { inp.click(); }, 50);
 }
- 
+
 async function nahrajFotku(id, name, card, files) {
   // Přijímá jeden soubor i pole souborů
   if (!Array.isArray(files)) files = [files];
   if (!files.length) return;
- 
+
   const hint = document.getElementById('ch-'+id);
   const si   = document.getElementById('si-'+id);
   const chybny = function(text) {
@@ -532,7 +543,7 @@ async function nahrajFotku(id, name, card, files) {
     si.innerHTML = '<svg viewBox="0 0 14 14"><line x1="3" y1="3" x2="11" y2="11" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/><line x1="11" y1="3" x2="3" y2="11" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg>';
     hint.textContent = text;
   };
- 
+
   // Náhled z prvního obrázku v dávce
   const prvniObrazek = files.filter(function(f){ return f.type && f.type.indexOf('image/') === 0; })[0];
   if (prvniObrazek) {
@@ -543,13 +554,13 @@ async function nahrajFotku(id, name, card, files) {
     };
     reader.readAsDataURL(prvniObrazek);
   }
- 
+
   // Stav: nahrávám
   card.classList.remove('done', 'error', 'absent');
   card.classList.add('uploading');
   si.className = 'state-icon ld visible';
   si.innerHTML = '';
- 
+
   const MAX_SOUBOR = 240 * 1024 * 1024;  // bezpečná rezerva pod limitem Graphu (250 MB)
   let uspesne = 0, selhalo = 0, prilisVelke = 0;
   for (let i = 0; i < files.length; i++) {
@@ -557,14 +568,14 @@ async function nahrajFotku(id, name, card, files) {
     hint.textContent = (files.length > 1)
       ? 'Nahrávám ' + (i + 1) + ' z ' + files.length + '\u2026'
       : 'Nahrávám\u2026';
- 
+
     const token = await getToken();
     if (!token) { chybny('Chyba přihlášení – zkuste znovu'); return; }
- 
+
     let ok = false;
     try { ok = await uploadToOneDrive(token, name, provozovna, files[i]); }
     catch(e) { console.error('Upload error:', e); }
- 
+
     if (ok) {
       uspesne++;
       fotoPocty[id] = (fotoPocty[id] || 0) + 1;
@@ -577,7 +588,7 @@ async function nahrajFotku(id, name, card, files) {
       selhalo++;
     }
   }
- 
+
   if (uspesne === 0) {
     if (prilisVelke === files.length) {
       chybny(files.length > 1 ? 'Soubory jsou příliš velké (max 240 MB)'
@@ -588,7 +599,7 @@ async function nahrajFotku(id, name, card, files) {
     }
     return;
   }
- 
+
   card.classList.remove('uploading', 'error', 'absent');
   card.classList.add('done');
   si.className = 'state-icon ok visible';
@@ -598,7 +609,7 @@ async function nahrajFotku(id, name, card, files) {
     : '');
   updateFooter();
 }
- 
+
 function updateGrid() {
   var ready = !!provozovna && !!account;
   document.querySelectorAll('.card').forEach(function(c) {
@@ -618,13 +629,13 @@ function updateGrid() {
   updateFooter();
   updatePoznamky();
 }
- 
+
 /* ── Poznámky k provozovně ──────────────────────────────── */
 function poznamkyText() {
   const el = document.getElementById('pozn-text');
   return el ? el.value.trim() : '';
 }
- 
+
 function updatePoznamky() {
   const ta   = document.getElementById('pozn-text');
   const btn  = document.getElementById('pozn-btn');
@@ -646,7 +657,7 @@ function updatePoznamky() {
     stav.textContent = 'Neuložené změny';
   }
 }
- 
+
 async function ulozPoznamky() {
   const text = poznamkyText();
   if (!text || !provozovna || !account) return;
@@ -667,7 +678,7 @@ async function ulozPoznamky() {
     btn.disabled = false;
   }
 }
- 
+
 /* Vynuluje evidenci fotek a stavy karet (při přechodu na jinou provozovnu) */
 function resetEvidenci() {
   for (var k in fotoPocty) delete fotoPocty[k];
@@ -693,12 +704,12 @@ function resetEvidenci() {
   if (stav) delete stav.dataset.ulozeno;
   updatePoznamky();
 }
- 
+
 /* Provozovna, pod kterou byly pořízeny fotky v aktuální evidenci */
 let provozovnaEvidence = '';
- 
+
 document.getElementById('pozn-text').addEventListener('input', updatePoznamky);
- 
+
 document.getElementById('prov-input').addEventListener('input', function() {
   var nova = this.value.trim();
   var mameFotky = Object.keys(fotoPocty).length > 0;
@@ -712,13 +723,13 @@ document.getElementById('prov-input').addEventListener('input', function() {
   this.classList.remove('invalid');
   updateGrid();
 });
- 
+
 function highlightProvozovna() {
   var el = document.getElementById('prov-input');
   el.classList.add('invalid'); el.focus();
   setTimeout(function() { el.classList.remove('invalid'); }, 2000);
 }
- 
+
 function updateFooter() {
   var n = Object.keys(fotoPocty).length;
   var celkem = ITEMS.length;
@@ -732,22 +743,22 @@ function updateFooter() {
     'Nahráno ' + n + ' z ' + celkem + ' – provozovna: ' + provozovna;
   document.getElementById('xbtn').disabled = !(provozovna && account);
 }
- 
+
 async function doExport() {
   if (!provozovna || !account) return;
   const xbtn = document.getElementById('xbtn');
   const ftTxt = document.getElementById('ft-txt');
- 
+
   // Položky bez nahrané fotky
   const chybejici = ITEMS.filter(function(it){ return !(fotoPocty[it[0]] > 0); });
- 
+
   if (chybejici.length === 0) {
     alert('Všechna zařízení mají fotku – seznam absence není potřeba.\n\nUloženo v OneDrive:\nFotodokumentace › ' + provozovna);
     return;
   }
- 
+
   if (!confirm('Do složky provozovny se vytvoří souhrnný seznam ' + chybejici.length + ' chybějících zařízení (Absence_zarizeni.txt).\n\nPokračovat?')) return;
- 
+
   const origTxt = ftTxt.textContent;
   xbtn.disabled = true;
   ftTxt.textContent = 'Zapisuji seznam absence…';
@@ -758,24 +769,24 @@ async function doExport() {
     ftTxt.textContent = origTxt;
     return;
   }
- 
+
   const names = chybejici.map(function(it){ return it[1]; });
   let ok = false;
   try { ok = await uploadAbsenceList(token, provozovna, names); }
   catch(e) { console.error('Absence list error:', e); }
- 
+
   if (ok) chybejici.forEach(function(it){ markNotPresent(it[0]); });
- 
+
   xbtn.disabled = false;
   updateFooter();
- 
+
   if (ok) {
     alert('Hotovo.\n\nSeznam absence (' + names.length + ' zařízení) uložen:\nFotodokumentace › ' + provozovna + ' › Absence_zarizeni.txt');
   } else {
     alert('Uložení seznamu selhalo – zkuste export znovu.');
   }
 }
- 
+
 (function boot() {
   var cfg = loadCfg();
   if (cfg.clientId) { initMsal(cfg.clientId, cfg.tenant || 'common'); }
@@ -785,4 +796,3 @@ async function doExport() {
 </script>
 </body>
 </html>
- 
