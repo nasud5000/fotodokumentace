@@ -471,21 +471,104 @@ async function uploadToOneDrive(token, deviceName, provName, file) {
   return r.ok;
 }
 
-async function uploadAbsenceList(token, provName, absentNames) {
-  const clean = s => s.replace(/[\\/: *?"<>|]/g, '_').trim();
-  const path = ['Fotodokumentace', clean(provName), 'Absence_zarizeni.txt'].map(encodeURIComponent).join('/');
-  const url = 'https://graph.microsoft.com/v1.0/me/drive/root:/' + path + ':/content';
+/* Český tvar slova "fotka" podle počtu */
+function fotkySlovo(n) { return n === 1 ? 'fotka' : (n > 1 && n < 5 ? 'fotky' : 'fotek'); }
+
+/* Název denního souboru – pro každý den vzniká samostatný soubor,
+   starší dny zůstávají nedotčené.                                 */
+function denniNazev(prefix) {
   const d = new Date();
   const pad = n => String(n).padStart(2, '0');
-  const datum = pad(d.getDate()) + '.' + pad(d.getMonth()+1) + '.' + d.getFullYear() + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
-  let body = 'ABSENCE ZAŘÍZENÍ\r\n';
-  body += 'Provozovna: ' + provName + '\r\n';
-  body += 'Režim: ' + REZIM_NAZEV[rezim] + '\r\n';
-  body += 'Datum: ' + datum + '\r\n\r\n';
-  body += 'Na prodejně se nenacházejí tato zařízení:\r\n';
-  absentNames.forEach(function(n){ body += '\u2022 ' + n + '\r\n'; });
-  const r = await fetch(url, { method:'PUT', headers:{'Authorization':'Bearer '+token,'Content-Type':'text/plain; charset=utf-8'}, body: body });
+  return prefix + '_' + d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + '.txt';
+}
+
+/* Připojí blok textu na konec denního souboru.
+   Stávající obsah se NIKDY nepřepisuje – načte se a nový záznam
+   se přidá za něj. Vrací true při úspěchu.                       */
+async function pripojDoDenniho(token, provName, prefix, nadpis, blok, stitek) {
+  const base = 'https://graph.microsoft.com/v1.0/me/drive';
+  const clean = s => s.replace(/[\\/: *?"<>|]/g, '_').trim();
+  const d = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  const den = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  const cas = pad(d.getHours()) + ':' + pad(d.getMinutes());
+  const nazev = denniNazev(prefix);
+  const path = ['Fotodokumentace', clean(provName), nazev].map(encodeURIComponent).join('/');
+  const url = base + '/root:/' + path + ':/content';
+
+  let stav = '';
+  try {
+    const g = await fetch(url, { headers: { 'Authorization': 'Bearer ' + token } });
+    if (g.ok) stav = await g.text();
+  } catch (e) { /* soubor zatim neexistuje */ }
+
+  let zapis;
+  if (!stav) {
+    zapis  = nadpis + '\r\n';
+    zapis += 'Provozovna: ' + provName + '\r\n';
+    zapis += 'Datum: ' + den + '\r\n';
+    zapis += '------------------------------------------------\r\n\r\n';
+  } else {
+    zapis = stav.replace(/\s+$/, '') + '\r\n\r\n';
+  }
+  zapis += '[' + cas + ' \u2013 ' + (stitek || REZIM_NAZEV[rezim]) + ']\r\n';
+  zapis += String(blok).replace(/\r?\n/g, '\r\n').replace(/\s+$/, '') + '\r\n';
+
+  const r = await fetch(url, {
+    method: 'PUT',
+    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'text/plain; charset=utf-8' },
+    body: zapis
+  });
   return r.ok;
+}
+
+/* Ucelený soupis stavu provozovny: chybějící i nafocená zařízení.
+   Každý zápis je sám o sobě úplný a připojuje se k předchozím.    */
+async function uploadAbsenceList(token, provName, absentNames) {
+  const nafoceno = ITEMS.filter(function(it){ return fotoPocty[it[0]] > 0; });
+  let blok = 'Na prodejně se nenacházejí tato zařízení (' + absentNames.length + ' z ' + ITEMS.length + '):\r\n';
+  if (absentNames.length === 0) {
+    blok += '\u2022 žádné – všechna zařízení jsou nafocena\r\n';
+  } else {
+    absentNames.forEach(function(n){ blok += '\u2022 ' + n + '\r\n'; });
+  }
+  blok += '\r\nNafoceno (' + nafoceno.length + ' z ' + ITEMS.length + '):\r\n';
+  if (nafoceno.length === 0) {
+    blok += '\u2022 zatím nic\r\n';
+  } else {
+    nafoceno.forEach(function(it){
+      const p = fotoPocty[it[0]];
+      blok += '\u2022 ' + it[1] + ' \u2013 ' + p + ' ' + fotkySlovo(p) + '\r\n';
+    });
+  }
+  return await pripojDoDenniho(token, provName, 'Absence_zarizeni', 'ABSENCE ZAŘÍZENÍ', blok);
+}
+
+/* Co bylo v této relaci vyměněno a doplněno – samostatný denní soubor. */
+async function uploadZmeny(token, provName) {
+  const blok = zmenyBlok();
+  if (!blok) return true;          // není co zapisovat
+  return await pripojDoDenniho(token, provName, 'Zmeny', 'ZMĚNY ZAŘÍZENÍ', blok, 'souhrn relace');
+}
+
+/* Sestaví text souboru změn ze zmenyEvidence (sekce podle režimu). */
+function zmenyBlok() {
+  const poradi = ['vymena', 'doplneni', 'pasport'];
+  let blok = '';
+  poradi.forEach(function(r) {
+    const zazn = Object.keys(zmenyEvidence)
+      .map(function(k){ return zmenyEvidence[k]; })
+      .filter(function(z){ return z.rezim === r; });
+    if (!zazn.length) return;
+    blok += REZIM_NAZEV[r].toUpperCase() + ' (' + zazn.length + '):\r\n';
+    zazn.forEach(function(z) {
+      blok += '\u2022 ' + z.name + ' \u2013 ' + z.pocet + ' ' + fotkySlovo(z.pocet) + ' (' + z.cas + ')';
+      if (r === 'vymena') blok += ' \u2013 původní fotky přesunuty do podsložky „old“';
+      blok += '\r\n';
+    });
+    blok += '\r\n';
+  });
+  return blok;
 }
 
 /* Přesune stávající soubory ve složce zařízení do podsložky "old".
@@ -539,42 +622,7 @@ async function presunDoOld(token, deviceName, provName) {
 }
 
 async function uploadPoznamky(token, provName, text) {
-  const base = 'https://graph.microsoft.com/v1.0/me/drive';
-  const clean = s => s.replace(/[\\/: *?"<>|]/g, '_').trim();
-  const d = new Date();
-  const pad = n => String(n).padStart(2, '0');
-  const den = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
-  const cas = pad(d.getHours()) + ':' + pad(d.getMinutes());
-  // Nový soubor pro každý den – poznámky z dřívějších dnů zůstávají nedotčené
-  const nazev = 'Poznamky_' + den + '.txt';
-  const path = ['Fotodokumentace', clean(provName), nazev].map(encodeURIComponent).join('/');
-  const url = base + '/root:/' + path + ':/content';
-
-  // Stávající obsah dnešního souboru – nepřepisuje se, doplňuje
-  let stav = '';
-  try {
-    const g = await fetch(url, { headers: { 'Authorization': 'Bearer ' + token } });
-    if (g.ok) stav = await g.text();
-  } catch (e) { /* soubor zatím neexistuje */ }
-
-  let zapis = '';
-  if (!stav) {
-    zapis += 'POZNÁMKY\r\n';
-    zapis += 'Provozovna: ' + provName + '\r\n';
-    zapis += 'Datum: ' + den + '\r\n';
-    zapis += '------------------------------------------------\r\n\r\n';
-  } else {
-    zapis = stav.replace(/\s+$/, '') + '\r\n\r\n';
-  }
-  zapis += '[' + cas + ' \u2013 ' + REZIM_NAZEV[rezim] + ']\r\n';
-  zapis += String(text).replace(/\r?\n/g, '\r\n') + '\r\n';
-
-  const r = await fetch(url, {
-    method: 'PUT',
-    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'text/plain; charset=utf-8' },
-    body: zapis
-  });
-  return r.ok;
+  return await pripojDoDenniho(token, provName, 'Poznamky', 'POZNÁMKY', String(text));
 }
 
 /* ── Režim práce ─────────────────────────────────────────────
@@ -590,6 +638,21 @@ const REZIM_POPIS = {
 const REZIM_NAZEV = { 'pasport':'Pasportizace', 'vymena':'Výměna', 'doplneni':'Doplnění' };
 /* Zařízení, u kterých už v této relaci proběhl přesun do "old" */
 const vymenaHotovo = {};
+/* Co se v této relaci na provozovně dělo – podklad pro soubor Zmeny_*.txt.
+   Klíč je kombinace zařízení a režimu, takže jedno zařízení může být
+   vedeno zvlášť jako vyměněné a zvlášť jako doplněné.              */
+const zmenyEvidence = {};
+
+function zapisZmenu(id, name) {
+  const k = id + '|' + rezim;
+  if (!zmenyEvidence[k]) {
+    const d = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    zmenyEvidence[k] = { name: name, rezim: rezim, pocet: 0,
+                         cas: pad(d.getHours()) + ':' + pad(d.getMinutes()) };
+  }
+  zmenyEvidence[k].pocet++;
+}
 
 function setMode(v) {
   if (!REZIM_POPIS[v]) return;
@@ -783,6 +846,7 @@ async function nahrajFotku(id, name, card, files) {
       fotoPocty[id] = (fotoPocty[id] || 0) + 1;
       uploaded[id] = fotoPocty[id];
       provozovnaEvidence = provozovna;
+      zapisZmenu(id, name);
       const badge = document.getElementById('cb-'+id);
       if (badge) { badge.textContent = fotoPocty[id]; badge.classList.add('visible'); }
       updateFooter();
@@ -833,11 +897,7 @@ function updateGrid() {
 }
 
 /* ── Poznámky k provozovně ──────────────────────────────── */
-function dnesniSoubor() {
-  const d = new Date();
-  const pad = n => String(n).padStart(2, '0');
-  return 'Poznamky_' + d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + '.txt';
-}
+function dnesniSoubor() { return denniNazev('Poznamky'); }
 
 function poznamkyText() {
   const el = document.getElementById('pozn-text');
@@ -910,6 +970,7 @@ function resetEvidenci() {
     if (pb) pb.removeAttribute('src');
   }
   for (var k3 in vymenaHotovo) delete vymenaHotovo[k3];
+  for (var k4 in zmenyEvidence) delete zmenyEvidence[k4];
   var ta = document.getElementById('pozn-text');
   var stav = document.getElementById('pozn-stav');
   if (ta) ta.value = '';
@@ -961,19 +1022,21 @@ async function doExport() {
   const xbtn = document.getElementById('xbtn');
   const ftTxt = document.getElementById('ft-txt');
 
-  // Položky bez nahrané fotky
+  // Položky bez nahrané fotky – soupis je vždy úplný proti celému seznamu zařízení
   const chybejici = ITEMS.filter(function(it){ return !(fotoPocty[it[0]] > 0); });
+  const mameZmeny = Object.keys(zmenyEvidence).length > 0;
+  const nazevAbs  = denniNazev('Absence_zarizeni');
+  const nazevZm   = denniNazev('Zmeny');
 
-  if (chybejici.length === 0) {
-    alert('Všechna zařízení mají fotku – seznam absence není potřeba.\n\nUloženo v OneDrive:\nFotodokumentace › ' + provozovna);
-    return;
-  }
-
-  if (!confirm('Do složky provozovny se vytvoří souhrnný seznam ' + chybejici.length + ' chybějících zařízení (Absence_zarizeni.txt).\n\nPokračovat?')) return;
+  let popis = 'Do složky provozovny se zapíše:\n';
+  popis += '\u2022 ' + nazevAbs + ' \u2013 ucelený soupis, chybí ' + chybejici.length + ' z ' + ITEMS.length + '\n';
+  if (mameZmeny) popis += '\u2022 ' + nazevZm + ' \u2013 co bylo vyměněno a doplněno\n';
+  popis += '\nStávající soubory se nepřepisují, záznam se připojí na konec.\n\nPokračovat?';
+  if (!confirm(popis)) return;
 
   const origTxt = ftTxt.textContent;
   xbtn.disabled = true;
-  ftTxt.textContent = 'Zapisuji seznam absence…';
+  ftTxt.textContent = 'Zapisuji soupis\u2026';
   const token = await getToken();
   if (!token) {
     alert('Chyba přihlášení – přihlaste se prosím znovu do OneDrive.');
@@ -983,19 +1046,32 @@ async function doExport() {
   }
 
   const names = chybejici.map(function(it){ return it[1]; });
-  let ok = false;
-  try { ok = await uploadAbsenceList(token, provozovna, names); }
+  let okAbs = false, okZm = true;
+  try { okAbs = await uploadAbsenceList(token, provozovna, names); }
   catch(e) { console.error('Absence list error:', e); }
+  if (mameZmeny) {
+    ftTxt.textContent = 'Zapisuji změny\u2026';
+    okZm = false;
+    try { okZm = await uploadZmeny(token, provozovna); }
+    catch(e) { console.error('Zmeny error:', e); }
+  }
 
-  if (ok) chybejici.forEach(function(it){ markNotPresent(it[0]); });
+  if (okAbs) chybejici.forEach(function(it){ markNotPresent(it[0]); });
 
   xbtn.disabled = false;
   updateFooter();
 
-  if (ok) {
-    alert('Hotovo.\n\nSeznam absence (' + names.length + ' zařízení) uložen:\nFotodokumentace › ' + provozovna + ' › Absence_zarizeni.txt');
+  if (okAbs && okZm) {
+    let h = 'Hotovo – zápisy připojeny, nic se nepřepsalo.\n\nFotodokumentace \u203a ' + provozovna + '\n';
+    h += '\u2022 ' + nazevAbs + ' (chybí ' + names.length + ' z ' + ITEMS.length + ')\n';
+    if (mameZmeny) h += '\u2022 ' + nazevZm + '\n';
+    alert(h);
+  } else if (okAbs && !okZm) {
+    alert('Soupis absence se uložil, zápis změn (' + nazevZm + ') selhal – zkuste export znovu.');
+  } else if (!okAbs && okZm && mameZmeny) {
+    alert('Zápis změn se uložil, soupis absence (' + nazevAbs + ') selhal – zkuste export znovu.');
   } else {
-    alert('Uložení seznamu selhalo – zkuste export znovu.');
+    alert('Uložení se nezdařilo – zkuste export znovu.');
   }
 }
 
