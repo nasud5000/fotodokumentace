@@ -48,6 +48,25 @@ header p { margin-top:6px; font-size:.82rem; font-weight:300; color:rgba(255,255
 .sekce span { font-size:.72rem; font-weight:600; letter-spacing:.09em; text-transform:uppercase; color:rgba(255,255,255,.46); white-space:nowrap; }
 .sekce::after { content:''; flex:1; height:1px; background:linear-gradient(90deg, rgba(255,255,255,.16), transparent); }
 .sekce:first-child { margin-top:0; }
+.seg { display:flex; gap:6px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.16); border-radius:11px; padding:4px; }
+.seg-btn { flex:1; padding:9px 10px; border-radius:8px; border:1px solid transparent; background:transparent; font-family:inherit; font-size:.84rem; font-weight:500; color:rgba(255,255,255,.55); cursor:pointer; transition:background .18s,color .18s,border-color .18s; }
+.seg-btn:hover { color:rgba(255,255,255,.85); }
+.seg-btn.active { background:rgba(130,80,255,.55); border-color:rgba(160,120,255,.5); color:#fff; }
+/* ── Volba režimu práce ───────────────────────────────────── */
+.rezim { margin-bottom:14px; padding:13px 18px 14px; border-radius:18px; }
+.rezim-hd { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:9px; }
+.rezim-hd label { font-size:.72rem; font-weight:600; letter-spacing:.09em; text-transform:uppercase; color:rgba(255,255,255,.46); }
+.rezim-popis { font-size:.72rem; font-weight:300; color:rgba(255,255,255,.42); margin-top:9px; line-height:1.45; }
+.rezim.vymena { border-color:rgba(245,170,70,.38); background:rgba(245,170,70,.07); }
+.rezim.vymena .rezim-popis { color:rgba(252,200,120,.78); }
+@media (max-width:520px){
+  .rezim { padding:11px 13px 12px; border-radius:15px; }
+  .seg { gap:4px; padding:3px; }
+  .seg-btn { padding:8px 4px; font-size:.72rem; }
+  .rezim-popis { font-size:.66rem; }
+}
+@media (max-width:360px){ .seg-btn { font-size:.66rem; padding:7px 2px; } }
+
 /* ── Panel poznámek ───────────────────────────────────────── */
 .pozn { margin-top:14px; padding:16px 18px; border-radius:18px; }
 .pozn-hd { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px; }
@@ -162,15 +181,12 @@ header p { margin-top:6px; font-size:.82rem; font-weight:300; color:rgba(255,255
 
 <div class="modal-wrap" id="modal-wrap">
   <div class="modal">
-    <h2>Nastavení připojení k OneDrive</h2>
+    <h2>Nastavení aplikace</h2>
     <p>Pro ukládání fotografií je potřeba zadat ID aplikace z Azure.</p>
     <div class="modal-field">
       <label>ID APLIKACE (CLIENT ID)</label>
-      <input class="modal-input" id="inp-clientid" type="text" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off" spellcheck="false">
-    </div>
-    <div class="modal-field">
-      <label>ID TENANTA (nechte prázdné pro běžné MS účty)</label>
-      <input class="modal-input" id="inp-tenant" type="text" placeholder="common" autocomplete="off" spellcheck="false">
+      <div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:10px 14px;font-size:.8rem;color:rgba(180,160,255,.92);word-break:break-all;font-family:monospace">f8f5a059-f0cb-44c7-8778-b46b1ac8bd06</div>
+      <p style="font-size:.72rem;color:rgba(255,255,255,.34);margin-top:6px;line-height:1.5">Nastaveno v kódu aplikace. Tenant se zjišťuje automaticky z domény přihlašovacího jména.</p>
     </div>
     <div class="modal-row">
       <button class="modal-btn primary" onclick="saveSettings()">Uložit a pokračovat</button>
@@ -207,6 +223,18 @@ header p { margin-top:6px; font-size:.82rem; font-weight:300; color:rgba(255,255
       </svg>
     </button>
   </div>
+  <div class="rezim glass" id="rezim-box">
+    <div class="rezim-hd">
+      <label>Režim práce</label>
+    </div>
+    <div class="seg" id="seg-mode">
+      <button type="button" class="seg-btn active" data-val="pasport" onclick="setMode('pasport')">Pasportizace</button>
+      <button type="button" class="seg-btn" data-val="vymena" onclick="setMode('vymena')">Výměna</button>
+      <button type="button" class="seg-btn" data-val="doplneni" onclick="setMode('doplneni')">Doplnění</button>
+    </div>
+    <div class="rezim-popis" id="rezim-popis">První nafocení zařízení na provozovně.</div>
+  </div>
+
   <div class="grid" id="grid"></div>
 
   <div class="pozn glass">
@@ -243,12 +271,28 @@ function isRestrictedEnv() {
 function isFileProtocol() { return window.location.protocol === 'file:'; }
 function cleanRedirectUri() { return window.location.href.split('?')[0].split('#')[0]; }
 
-function initMsal(clientId, tenant) {
-  const authority = (tenant && tenant !== 'common')
-    ? 'https://login.microsoftonline.com/' + tenant
-    : 'https://login.microsoftonline.com/common';
+/* ── Konfigurace Azure (natvrdo v kódu) ──────────────────────
+   AZURE_AUTHORITY 'organizations' = přihlášení pracovním účtem
+   z libovolného tenantu; tenant se odvodí z domény zadaného
+   uživatelského jména, uživatel žádné Tenant ID nevyplňuje.
+
+   Pokud je registrace aplikace v Entra nastavena jako
+   single-tenant (signInAudience: AzureADMyOrg), endpoint
+   /organizations nebude fungovat – nahraďte ho konkrétním
+   Tenant ID uvedeným níže v AZURE_TENANT_ID.                 */
+const AZURE_CLIENT_ID = 'f8f5a059-f0cb-44c7-8778-b46b1ac8bd06';
+const AZURE_TENANT_ID = 'fd51798d-962f-4a26-aa45-66afc4240642';
+const AZURE_AUTHORITY = 'https://login.microsoftonline.com/organizations';
+
+function initMsal() {
   msalInstance = new msal.PublicClientApplication({
-    auth: { clientId, authority, redirectUri: isFileProtocol() ? 'https://login.microsoftonline.com/common/oauth2/nativeclient' : cleanRedirectUri() },
+    auth: {
+      clientId: AZURE_CLIENT_ID,
+      authority: AZURE_AUTHORITY,
+      redirectUri: isFileProtocol()
+        ? 'https://login.microsoftonline.com/common/oauth2/nativeclient'
+        : cleanRedirectUri()
+    },
     cache: { cacheLocation: 'localStorage', storeAuthStateInCookie: true },
   });
   msalInstance.initialize().then(() => {
@@ -258,19 +302,17 @@ function initMsal(clientId, tenant) {
         const accs = msalInstance.getAllAccounts();
         if (accs.length) setAccount(accs[0]);
       }
-    }).catch(e => console.warn('MSAL redirect:', e));
+    }).catch(e => { console.warn('MSAL redirect:', e); setODState('error'); });
   });
 }
 
 function openModal() {
   const cfg = loadCfg();
-  document.getElementById('inp-clientid').value = cfg.clientId || '';
-  document.getElementById('inp-tenant').value = cfg.tenant || '';
-  document.getElementById('modal-cancel').style.display = cfg.clientId ? '' : 'none';
   if (!isFileProtocol()) {
     document.getElementById('modal-cur-url').textContent = cleanRedirectUri();
     document.getElementById('modal-url-block').style.display = 'block';
   }
+  document.getElementById('modal-cancel').style.display = '';
   document.getElementById('modal-wrap').classList.add('open');
 }
 function copyUrl() {
@@ -280,17 +322,11 @@ function copyUrl() {
   });
 }
 function closeModal() { document.getElementById('modal-wrap').classList.remove('open'); }
-function saveSettings() {
-  const cid = document.getElementById('inp-clientid').value.trim();
-  if (!cid) { document.getElementById('inp-clientid').style.borderColor='rgba(255,100,100,.6)'; return; }
-  const ten = document.getElementById('inp-tenant').value.trim() || 'common';
-  localStorage.setItem('fotodoc_cfg', JSON.stringify({ clientId: cid, tenant: ten }));
-  closeModal(); initMsal(cid, ten); setODState('idle');
-}
+function saveSettings() { closeModal(); }
 function loadCfg() { try { return JSON.parse(localStorage.getItem('fotodoc_cfg') || '{}'); } catch { return {}; } }
 
 function handleODClick() {
-  if (!msalInstance) { openModal(); return; }
+  if (!msalInstance) { alert('Aplikace se ještě načítá, zkuste to za okamžik.'); return; }
   if (account) { signOut(); return; }
   signIn();
 }
@@ -392,6 +428,7 @@ async function uploadAbsenceList(token, provName, absentNames) {
   const datum = pad(d.getDate()) + '.' + pad(d.getMonth()+1) + '.' + d.getFullYear() + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
   let body = 'ABSENCE ZAŘÍZENÍ\r\n';
   body += 'Provozovna: ' + provName + '\r\n';
+  body += 'Režim: ' + REZIM_NAZEV[rezim] + '\r\n';
   body += 'Datum: ' + datum + '\r\n\r\n';
   body += 'Na prodejně se nenacházejí tato zařízení:\r\n';
   absentNames.forEach(function(n){ body += '\u2022 ' + n + '\r\n'; });
@@ -399,19 +436,118 @@ async function uploadAbsenceList(token, provName, absentNames) {
   return r.ok;
 }
 
-async function uploadPoznamky(token, provName, text) {
+/* Přesune stávající soubory ve složce zařízení do podsložky "old".
+   Nic nemaže – jen přesouvá. Vrací true i když složka neexistuje
+   nebo je prázdná (není co přesouvat).                          */
+async function presunDoOld(token, deviceName, provName) {
+  const base = 'https://graph.microsoft.com/v1.0/me/drive';
   const clean = s => s.replace(/[\\/: *?"<>|]/g, '_').trim();
-  const path = ['Fotodokumentace', clean(provName), 'Poznamky.txt'].map(encodeURIComponent).join('/');
-  const url = 'https://graph.microsoft.com/v1.0/me/drive/root:/' + path + ':/content';
+  const slozka = ['Fotodokumentace', clean(provName), clean(deviceName)]
+                   .map(encodeURIComponent).join('/');
+  const hdr = { 'Authorization': 'Bearer ' + token };
+
+  // 1) Co je ve složce zařízení
+  const r = await fetch(base + '/root:/' + slozka + ':/children?$top=999', { headers: hdr });
+  if (r.status === 404) return true;            // složka ještě neexistuje
+  if (!r.ok) return false;
+  const data = await r.json();
+  const soubory = (data.value || []).filter(function(it) { return it.file; });
+  if (!soubory.length) return true;             // jen podsložky nebo prázdno
+
+  // 2) Podsložka "old" – vytvořit, nebo použít existující
+  let oldId = null;
+  const cr = await fetch(base + '/root:/' + slozka + ':/children', {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: 'old', folder: {}, '@microsoft.graph.conflictBehavior': 'fail' })
+  });
+  if (cr.ok) {
+    oldId = (await cr.json()).id;
+  } else {
+    const g = await fetch(base + '/root:/' + slozka + '/old', { headers: hdr });
+    if (!g.ok) return false;
+    oldId = (await g.json()).id;
+  }
+  if (!oldId) return false;
+
+  // 3) Přesun souborů
+  let chyby = 0;
+  for (let i = 0; i < soubory.length; i++) {
+    const mv = await fetch(base + '/items/' + soubory[i].id, {
+      method: 'PATCH',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        parentReference: { id: oldId },
+        '@microsoft.graph.conflictBehavior': 'rename'
+      })
+    });
+    if (!mv.ok) chyby++;
+  }
+  return chyby === 0;
+}
+
+async function uploadPoznamky(token, provName, text) {
+  const base = 'https://graph.microsoft.com/v1.0/me/drive';
+  const clean = s => s.replace(/[\\/: *?"<>|]/g, '_').trim();
   const d = new Date();
   const pad = n => String(n).padStart(2, '0');
-  const datum = pad(d.getDate()) + '.' + pad(d.getMonth()+1) + '.' + d.getFullYear() + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
-  let body = 'POZNÁMKY\r\n';
-  body += 'Provozovna: ' + provName + '\r\n';
-  body += 'Datum: ' + datum + '\r\n\r\n';
-  body += String(text).replace(/\r?\n/g, '\r\n') + '\r\n';
-  const r = await fetch(url, { method:'PUT', headers:{'Authorization':'Bearer '+token,'Content-Type':'text/plain; charset=utf-8'}, body: body });
+  const den = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  const cas = pad(d.getHours()) + ':' + pad(d.getMinutes());
+  // Nový soubor pro každý den – poznámky z dřívějších dnů zůstávají nedotčené
+  const nazev = 'Poznamky_' + den + '.txt';
+  const path = ['Fotodokumentace', clean(provName), nazev].map(encodeURIComponent).join('/');
+  const url = base + '/root:/' + path + ':/content';
+
+  // Stávající obsah dnešního souboru – nepřepisuje se, doplňuje
+  let stav = '';
+  try {
+    const g = await fetch(url, { headers: { 'Authorization': 'Bearer ' + token } });
+    if (g.ok) stav = await g.text();
+  } catch (e) { /* soubor zatím neexistuje */ }
+
+  let zapis = '';
+  if (!stav) {
+    zapis += 'POZNÁMKY\r\n';
+    zapis += 'Provozovna: ' + provName + '\r\n';
+    zapis += 'Datum: ' + den + '\r\n';
+    zapis += '------------------------------------------------\r\n\r\n';
+  } else {
+    zapis = stav.replace(/\s+$/, '') + '\r\n\r\n';
+  }
+  zapis += '[' + cas + ' \u2013 ' + REZIM_NAZEV[rezim] + ']\r\n';
+  zapis += String(text).replace(/\r?\n/g, '\r\n') + '\r\n';
+
+  const r = await fetch(url, {
+    method: 'PUT',
+    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'text/plain; charset=utf-8' },
+    body: zapis
+  });
   return r.ok;
+}
+
+/* ── Režim práce ─────────────────────────────────────────────
+   pasport  – první nafocení (nic se nepřesouvá)
+   vymena   – staré fotky se přesunou do podsložky "old"
+   doplneni – nové zařízení, které tam dříve nebylo            */
+let rezim = 'pasport';
+const REZIM_POPIS = {
+  'pasport':  'První nafocení zařízení na provozovně.',
+  'vymena':   'Původní fotky se nesmažou – přesunou se do podsložky „old“ a nové se uloží vedle.',
+  'doplneni': 'Nové zařízení, které na provozovně dosud nebylo.'
+};
+const REZIM_NAZEV = { 'pasport':'Pasportizace', 'vymena':'Výměna', 'doplneni':'Doplnění' };
+/* Zařízení, u kterých už v této relaci proběhl přesun do "old" */
+const vymenaHotovo = {};
+
+function setMode(v) {
+  if (!REZIM_POPIS[v]) return;
+  rezim = v;
+  const btns = document.querySelectorAll('#seg-mode .seg-btn');
+  for (let i = 0; i < btns.length; i++) {
+    btns[i].classList.toggle('active', btns[i].getAttribute('data-val') === rezim);
+  }
+  document.getElementById('rezim-popis').textContent = REZIM_POPIS[rezim];
+  document.getElementById('rezim-box').classList.toggle('vymena', rezim === 'vymena');
 }
 
 const fotoPocty = {};  // { id: počet nahraných fotek }
@@ -572,6 +708,20 @@ async function nahrajFotku(id, name, card, files) {
     const token = await getToken();
     if (!token) { chybny('Chyba přihlášení – zkuste znovu'); return; }
 
+    // Režim Výměna: před prvním nahráním přesuň stávající fotky do "old".
+    // Jen jednou na zařízení a relaci, aby se nepřesouvaly i nové snímky.
+    if (rezim === 'vymena' && !vymenaHotovo[id]) {
+      hint.textContent = 'Přesouvám staré fotky\u2026';
+      let presun = false;
+      try { presun = await presunDoOld(token, name, provozovna); }
+      catch(e) { console.error('Přesun do old:', e); }
+      if (!presun) { chybny('Nepodařilo se přesunout staré fotky – zkuste znovu'); return; }
+      vymenaHotovo[id] = true;
+      hint.textContent = (files.length > 1)
+        ? 'Nahrávám ' + (i + 1) + ' z ' + files.length + '\u2026'
+        : 'Nahrávám\u2026';
+    }
+
     let ok = false;
     try { ok = await uploadToOneDrive(token, name, provozovna, files[i]); }
     catch(e) { console.error('Upload error:', e); }
@@ -631,6 +781,12 @@ function updateGrid() {
 }
 
 /* ── Poznámky k provozovně ──────────────────────────────── */
+function dnesniSoubor() {
+  const d = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  return 'Poznamky_' + d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + '.txt';
+}
+
 function poznamkyText() {
   const el = document.getElementById('pozn-text');
   return el ? el.value.trim() : '';
@@ -645,16 +801,16 @@ function updatePoznamky() {
   const pripraveno = !!provozovna && !!account;
   ta.disabled = !pripraveno;
   const delka = ta.value.length;
-  cnt.textContent = delka + (delka === 1 ? ' znak' : (delka < 5 ? ' znaky' : ' znaků'));
+  cnt.textContent = delka + (delka === 1 ? ' znak' : (delka > 1 && delka < 5 ? ' znaky' : ' znaků'));
   btn.disabled = !pripraveno || poznamkyText().length === 0;
   if (!pripraveno) {
     stav.textContent = !provozovna ? 'Zadejte číslo provozovny' : 'Přihlaste se';
   } else if (poznamkyText().length === 0) {
-    stav.textContent = 'Poznámky jsou nepovinné';
-  } else if (stav.dataset.ulozeno === ta.value) {
-    stav.textContent = 'Uloženo do Poznamky.txt';
+    stav.textContent = stav.dataset.ulozeno
+      ? 'Uloženo \u2013 můžete přidat další poznámku'
+      : 'Poznámky jsou nepovinné';
   } else {
-    stav.textContent = 'Neuložené změny';
+    stav.textContent = 'Neuložený zápis';
   }
 }
 
@@ -671,12 +827,15 @@ async function ulozPoznamky() {
   try { ok = await uploadPoznamky(token, provozovna, text); }
   catch(e) { console.error('Poznámky:', e); }
   if (ok) {
-    stav.dataset.ulozeno = document.getElementById('pozn-text').value;
-    stav.textContent = 'Uloženo do Poznamky.txt';
-  } else {
-    stav.textContent = 'Uložení selhalo – zkuste znovu';
-    btn.disabled = false;
+    // Zápis byl připojen do dnešního souboru – pole se vyprázdní pro další poznámku
+    document.getElementById('pozn-text').value = '';
+    stav.dataset.ulozeno = '1';
+    updatePoznamky();
+    stav.textContent = 'Zapsáno do ' + dnesniSoubor() + ' \u2013 můžete přidat další';
+    return;
   }
+  stav.textContent = 'Uložení selhalo – zkuste znovu';
+  btn.disabled = false;
 }
 
 /* Vynuluje evidenci fotek a stavy karet (při přechodu na jinou provozovnu) */
@@ -698,6 +857,7 @@ function resetEvidenci() {
     var pb = document.getElementById('pb-' + id);
     if (pb) pb.removeAttribute('src');
   }
+  for (var k3 in vymenaHotovo) delete vymenaHotovo[k3];
   var ta = document.getElementById('pozn-text');
   var stav = document.getElementById('pozn-stav');
   if (ta) ta.value = '';
@@ -788,9 +948,8 @@ async function doExport() {
 }
 
 (function boot() {
-  var cfg = loadCfg();
-  if (cfg.clientId) { initMsal(cfg.clientId, cfg.tenant || 'common'); }
-  else { openModal(); }
+  initMsal();
+  setODState('idle');
   updateFooter();
 })();
 </script>
