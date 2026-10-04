@@ -181,19 +181,15 @@ header p { margin-top:6px; font-size:.82rem; font-weight:300; color:rgba(255,255
 
 <div class="modal-wrap" id="modal-wrap">
   <div class="modal">
-    <h2>Nastavení aplikace</h2>
+    <h2>Nastavení připojení k OneDrive</h2>
     <p>Pro ukládání fotografií je potřeba zadat ID aplikace z Azure.</p>
     <div class="modal-field">
-      <label>TYP ÚČTU</label>
-      <div class="seg" id="seg-ucet">
-        <button type="button" class="seg-btn active" data-val="firemni" onclick="setUcet('firemni')">Firemní</button>
-        <button type="button" class="seg-btn" data-val="osobni" onclick="setUcet('osobni')">Osobní</button>
-      </div>
-      <p style="font-size:.72rem;color:rgba(255,255,255,.34);margin-top:7px;line-height:1.5" id="ucet-popis"></p>
+      <label>ID APLIKACE (CLIENT ID)</label>
+      <input class="modal-input" id="inp-clientid" type="text" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off" spellcheck="false">
     </div>
     <div class="modal-field">
-      <label>ID APLIKACE (CLIENT ID)</label>
-      <div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:10px 14px;font-size:.78rem;color:rgba(180,160,255,.92);word-break:break-all;font-family:monospace" id="ucet-cid"></div>
+      <label>ID TENANTA (nechte prázdné pro běžné MS účty)</label>
+      <input class="modal-input" id="inp-tenant" type="text" placeholder="common" autocomplete="off" spellcheck="false">
     </div>
     <div class="modal-row">
       <button class="modal-btn primary" onclick="saveSettings()">Uložit a pokračovat</button>
@@ -278,54 +274,14 @@ function isRestrictedEnv() {
 function isFileProtocol() { return window.location.protocol === 'file:'; }
 function cleanRedirectUri() { return window.location.href.split('?')[0].split('#')[0]; }
 
-/* ── Konfigurace Azure (natvrdo v kódu) ──────────────────────
-   firemni – pracovní účet (Datasys / Lagardère). Authority
-             /organizations: tenant se odvodí z domény zadaného
-             uživatelského jména, uživatel nic nevyplňuje.
-             Osobní účty (outlook.com, hotmail.cz) sem NEPATŘÍ.
-   osobni  – osobní účet Microsoft pro testování. Authority
-             /common přijme pracovní i osobní účty.
-
-   Pokud je firemní registrace v Entra single-tenant
-   (signInAudience: AzureADMyOrg), nahraďte u 'firemni'
-   'organizations' hodnotou AZURE_TENANT_ID níže.             */
-const AZURE_TENANT_ID = 'fd51798d-962f-4a26-aa45-66afc4240642';
-const AZURE_UCTY = {
-  firemni: {
-    nazev: 'Firemní účet',
-    clientId: 'f8f5a059-f0cb-44c7-8778-b46b1ac8bd06',
-    authority: 'https://login.microsoftonline.com/organizations',
-    popis: 'Pracovní účet Microsoft 365. Tenant se zjistí z domény přihlašovacího jména.'
-  },
-  osobni: {
-    nazev: 'Osobní účet',
-    clientId: '49b6369d-217f-48fe-abce-fe05d5364d48',
-    authority: 'https://login.microsoftonline.com/common',
-    popis: 'Osobní účet Microsoft (outlook.com, hotmail.cz) – pro testování.'
-  }
-};
-function ucetTyp() { return loadCfg().ucet === 'osobni' ? 'osobni' : 'firemni'; }
-function ucetKonf() { return AZURE_UCTY[ucetTyp()]; }
-let pendingUcet = 'firemni';
-
-function setUcet(v) {
-  pendingUcet = (v === 'osobni') ? 'osobni' : 'firemni';
-  const btns = document.querySelectorAll('#seg-ucet .seg-btn');
-  for (let i = 0; i < btns.length; i++) {
-    btns[i].classList.toggle('active', btns[i].getAttribute('data-val') === pendingUcet);
-  }
-  document.getElementById('ucet-popis').textContent = AZURE_UCTY[pendingUcet].popis;
-  document.getElementById('ucet-cid').textContent = AZURE_UCTY[pendingUcet].clientId;
-}
-
 /* Srozumitelné vysvětlení nejčastějších chyb přihlášení */
 function radaKChybe(txt) {
   if (/AADSTS50011|redirect_uri|reply url/i.test(txt))
     return 'Adresa aplikace není v Azure zapsaná jako Redirect URI (typ SPA). Zkopírujte ji z tohoto okna a předejte správci.';
   if (/AADSTS50020|AADSTS500200|different account|unauthorized_client|AADSTS700016/i.test(txt))
-    return 'Tento účet do dané registrace nepatří. V nastavení přepněte typ účtu (Firemní / Osobní).';
+    return 'Tento účet do zadané registrace nepatří. Zkontrolujte v nastavení ID aplikace a ID tenanta.';
   if (/AADSTS50194|userAudience|multi-tenant/i.test(txt))
-    return 'Registrace je single-tenant. V kódu nahraďte u firemního účtu „organizations" hodnotou Tenant ID.';
+    return 'Registrace je single-tenant. Vyplňte v nastavení ID tenanta místo prázdného pole.';
   if (/AADSTS65001|consent|AADSTS90094/i.test(txt))
     return 'Chybí souhlas správce s oprávněními Files.ReadWrite a User.Read.';
   if (/AADSTS50058|interaction_required|login_required/i.test(txt))
@@ -345,17 +301,19 @@ function chybaPrihlaseni(e) {
   console.error('Login error:', kod, e);
   setODState('error');
   alert('Přihlášení se nezdařilo\n\n'
-      + 'Účet: ' + ucetKonf().nazev + '\n'
       + (kod ? 'Kód: ' + kod + '\n' : '')
       + (zprava ? '\n' + zprava + '\n' : '')
       + '\n' + radaKChybe(cele));
 }
 
-function initMsal() {
+function initMsal(clientId, tenant) {
+  const authority = (tenant && tenant !== 'common')
+    ? 'https://login.microsoftonline.com/' + tenant
+    : 'https://login.microsoftonline.com/common';
   msalInstance = new msal.PublicClientApplication({
     auth: {
-      clientId: ucetKonf().clientId,
-      authority: ucetKonf().authority,
+      clientId: clientId,
+      authority: authority,
       redirectUri: isFileProtocol()
         ? 'https://login.microsoftonline.com/common/oauth2/nativeclient'
         : cleanRedirectUri()
@@ -375,12 +333,13 @@ function initMsal() {
 
 function openModal() {
   const cfg = loadCfg();
-  setUcet(cfg.ucet || 'firemni');
+  document.getElementById('inp-clientid').value = cfg.clientId || '';
+  document.getElementById('inp-tenant').value = cfg.tenant || '';
+  document.getElementById('modal-cancel').style.display = cfg.clientId ? '' : 'none';
   if (!isFileProtocol()) {
     document.getElementById('modal-cur-url').textContent = cleanRedirectUri();
     document.getElementById('modal-url-block').style.display = 'block';
   }
-  document.getElementById('modal-cancel').style.display = '';
   document.getElementById('modal-wrap').classList.add('open');
 }
 function copyUrl() {
@@ -391,12 +350,16 @@ function copyUrl() {
 }
 function closeModal() { document.getElementById('modal-wrap').classList.remove('open'); }
 function saveSettings() {
-  const zmenaUctu = (pendingUcet !== ucetTyp());
-  const cfg = loadCfg();
-  cfg.ucet = pendingUcet;
-  localStorage.setItem('fotodoc_cfg', JSON.stringify(cfg));
-  closeModal();
-  if (zmenaUctu) prepniUcet();
+  const cid = document.getElementById('inp-clientid').value.trim();
+  if (!cid) { document.getElementById('inp-clientid').style.borderColor='rgba(255,100,100,.6)'; return; }
+  document.getElementById('inp-clientid').style.borderColor='';
+  const ten = document.getElementById('inp-tenant').value.trim() || 'common';
+  const stare = loadCfg();
+  const zmena = (stare.clientId !== cid) || ((stare.tenant || 'common') !== ten);
+  localStorage.setItem('fotodoc_cfg', JSON.stringify({ clientId: cid, tenant: ten }));
+  // Změna registrace: stará relace MSAL by patřila jiné aplikaci
+  if (zmena) { account = null; vycistiMsalCache(localStorage); vycistiMsalCache(sessionStorage); }
+  closeModal(); initMsal(cid, ten); setODState('idle'); updateGrid();
 }
 
 /* Odstraní z úložiště všechny klíče MSAL (spec. API length/key, ne Object.keys) */
@@ -411,20 +374,11 @@ function vycistiMsalCache(store) {
   } catch (e) { /* úložiště nedostupné */ }
 }
 
-/* Přepnutí typu účtu: odhlásí, vyčistí cache MSAL a nastartuje znovu */
-function prepniUcet() {
-  account = null;
-  vycistiMsalCache(localStorage);
-  vycistiMsalCache(sessionStorage);
-  initMsal();
-  setODState('idle');
-  updateGrid();
-}
 
 function loadCfg() { try { return JSON.parse(localStorage.getItem('fotodoc_cfg') || '{}'); } catch { return {}; } }
 
 function handleODClick() {
-  if (!msalInstance) { alert('Aplikace se ještě načítá, zkuste to za okamžik.'); return; }
+  if (!msalInstance) { openModal(); return; }
   if (account) { signOut(); return; }
   signIn();
 }
@@ -1046,8 +1000,9 @@ async function doExport() {
 }
 
 (function boot() {
-  initMsal();
-  setODState('idle');
+  var cfg = loadCfg();
+  if (cfg.clientId) { initMsal(cfg.clientId, cfg.tenant || 'common'); }
+  else { openModal(); }
   updateFooter();
 })();
 </script>
