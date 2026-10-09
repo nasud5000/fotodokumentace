@@ -6,52 +6,43 @@ Microsoft Graph, přísná CSP. Nasazeno na Netlify z větve `main`.
 Druhá verze s přepínačem úložiště OneDrive/SharePoint se udržuje mimo repozitář
 (`index-volitelne-uloziste.html`).
 
-## OTEVŘENÉ ROZHODNUTÍ — struktura textových souborů
+## Textové soubory ve složce provozovny
 
-**Parkováno 2026-10-04 na výslovné přání majitele. Neimplementovat bez jeho rozhodnutí.**
+Rozhodnuto 2026-10-09. Všechny soubory jsou **datované a připojované** — žádný se nikdy
+nepřepisuje ani nemaže.
 
-Až napíše „pokračuj", je třeba mu znovu položit tento dotaz se třemi variantami
-(AskUserQuestion), ne rovnou něco stavět.
+| Soubor | Kdy vzniká | Obsah |
+|---|---|---|
+| `Aktualni_zarizeni_RRRR-MM-DD.txt` | při každém exportu | Revize všech 18 zařízení: co na prodejně je (s počtem fotek a režimem) a co ne |
+| `Absence_zarizeni_RRRR-MM-DD.txt` | při každém exportu | Jen seznam chybějících zařízení |
+| `Vymeneno_RRRR-MM-DD.txt` | jen proběhla-li výměna | Vyměněná zařízení s počtem fotek a časem |
+| `Doplneno_RRRR-MM-DD.txt` | jen proběhlo-li doplnění | Doplněná zařízení |
+| `Poznamky_RRRR-MM-DD.txt` | při uložení poznámky | Ruční poznámky, každý zápis s časem a režimem |
+| `Puvodni_zarizeni_RRRR-MM-DD.txt` | při první fotce v režimu Výměna | Přejmenovaný starší `Absence_zarizeni_*.txt` |
 
-> **Jak mají být soubory pojmenované?** Minule bylo zásadní, aby se nic nepřepisovalo
-> (proto datum v názvu), ale „aktuální zařízení" naopak zní jako jeden soubor,
-> který vždy ukazuje současný stav.
->
-> 1. **Vše s datem, připojuje se (doporučeno)** — `Aktualni_zarizeni_2026-10-04.txt`,
->    `Vymeneno_2026-10-04.txt`, `Doplneno_2026-10-04.txt`. Nic se nikdy nepřepíše,
->    každá návštěva má svůj záznam.
-> 2. **Aktuální pevný, ostatní s datem** — `Aktualni_zarizeni.txt` se přepisuje tak, aby
->    vždy ukazoval současný stav; `Vymeneno` a `Doplneno` se hromadí s datem.
-> 3. **Všechny pevné názvy** — `Aktualni_zarizeni.txt`, `Vymeneno.txt`, `Doplneno.txt`;
->    vždy jen poslední stav, starší záznamy se ztrácejí.
+Všechny zápisy jdou přes `pripojDoDenniho()`, který načte stávající obsah a nový blok
+připojí na konec. Volitelný parametr `stitek` mění text v hranaté závorce (`revize`,
+`výměna`, `doplnění`); bez něj se použije aktuální režim.
 
-Zadání, ze kterého to vzešlo: tři txt soubory — při výměně po pasportizaci přejmenovat
-`Absence_zarizeni` na `Puvodni_zarizeni`, dále `Vymeneno`, `Doplneno`, a `Aktualni_zarizeni`
-s revizí všech aktuálních zařízení.
+### Přejmenování na Puvodni_zarizeni
 
-Navazující otázky, které zatím nemají odpověď:
+`prejmenujNaPuvodni()` se volá při **prvním nahrání fotky v režimu Výměna**, jednou za
+relaci a provozovnu (`puvodniHotovo`). Vylistuje složku provozovny, najde všechny
+`Absence_zarizeni*.txt` a přejmenuje je na `Puvodni_zarizeni*.txt` se zachováním data.
+Narazí-li na obsazený název (druhá výměna), přidá `_2`, `_3`… — nic se nepřepíše.
+Prázdná nebo neexistující složka je úspěch. Neúspěch nahrávání fotek **nezastaví**, jen
+se zopakuje u další fotky a zmíní v závěrečné hlášce (`puvodniChyba`).
 
-- Kdy přejmenovat na `Puvodni_zarizeni` — při prvním nahrání v režimu Výměna, až při
-  exportu, nebo ručně? A co se stane při druhé výměně, přepíše se, nebo verzuje?
-- Nahradí `Vymeneno` + `Doplneno` stávající `Zmeny_*.txt`, nebo poběží vedle sebe?
-- Má se `Absence_zarizeni` dál zakládat?
+`Zmeny_*.txt` z commitu 916adb7 se už nezakládá — nahradily ho `Vymeneno` a `Doplneno`.
 
-## Stav před zaparkováním (commit 916adb7)
+## Režimy práce
 
-Do složky `Fotodokumentace/<provozovna>/` se zapisují tři textové soubory, všechny
-datované a **připojované** — žádný se nikdy nepřepisuje:
-
-| Soubor | Obsah |
-|---|---|
-| `Absence_zarizeni_RRRR-MM-DD.txt` | Ucelený soupis: chybějící i nafocená zařízení s počty fotek |
-| `Zmeny_RRRR-MM-DD.txt` | Sekce Výměna / Doplnění / Pasportizace — co se v relaci dělo |
-| `Poznamky_RRRR-MM-DD.txt` | Ruční poznámky, každý zápis s časem a režimem |
-
-Všechny tři jdou přes společný helper `pripojDoDenniho()`, který načte stávající obsah
-a nový blok připojí na konec.
+`pasport` (první nafocení), `vymena` (staré fotky se přesunou do podsložky `old`,
+nic se nemaže), `doplneni` (nové zařízení). Evidence toho, co se v relaci dělo, je
+v `zmenyEvidence` pod klíčem `id|rezim`; nuluje se při přechodu na jinou provozovnu.
 
 ## Testy
 
-jsdom harness mimo repozitář, 374 testů (přihlášení 78, nové funkce 166, regrese 130).
+jsdom harness mimo repozitář, 426 testů (přihlášení 78, nové funkce 216, regrese 132).
 Po každé úpravě `index.html` je spustit a ověřit inventář funkcí proti předchozí verzi —
 dřív se stalo, že příliš hladový regex smazal celé funkce.

@@ -522,53 +522,122 @@ async function pripojDoDenniho(token, provName, prefix, nadpis, blok, stitek) {
   return r.ok;
 }
 
-/* Ucelený soupis stavu provozovny: chybějící i nafocená zařízení.
-   Každý zápis je sám o sobě úplný a připojuje se k předchozím.    */
+/* Soupis chybějících zařízení. Každý zápis je úplný proti celému
+   seznamu zařízení a připojuje se k předchozím.                  */
 async function uploadAbsenceList(token, provName, absentNames) {
-  const nafoceno = ITEMS.filter(function(it){ return fotoPocty[it[0]] > 0; });
   let blok = 'Na prodejně se nenacházejí tato zařízení (' + absentNames.length + ' z ' + ITEMS.length + '):\r\n';
   if (absentNames.length === 0) {
     blok += '\u2022 žádné – všechna zařízení jsou nafocena\r\n';
   } else {
     absentNames.forEach(function(n){ blok += '\u2022 ' + n + '\r\n'; });
   }
-  blok += '\r\nNafoceno (' + nafoceno.length + ' z ' + ITEMS.length + '):\r\n';
-  if (nafoceno.length === 0) {
-    blok += '\u2022 zatím nic\r\n';
-  } else {
-    nafoceno.forEach(function(it){
-      const p = fotoPocty[it[0]];
-      blok += '\u2022 ' + it[1] + ' \u2013 ' + p + ' ' + fotkySlovo(p) + '\r\n';
-    });
-  }
   return await pripojDoDenniho(token, provName, 'Absence_zarizeni', 'ABSENCE ZAŘÍZENÍ', blok);
 }
 
-/* Co bylo v této relaci vyměněno a doplněno – samostatný denní soubor. */
-async function uploadZmeny(token, provName) {
-  const blok = zmenyBlok();
-  if (!blok) return true;          // není co zapisovat
-  return await pripojDoDenniho(token, provName, 'Zmeny', 'ZMĚNY ZAŘÍZENÍ', blok, 'souhrn relace');
-}
-
-/* Sestaví text souboru změn ze zmenyEvidence (sekce podle režimu). */
-function zmenyBlok() {
-  const poradi = ['vymena', 'doplneni', 'pasport'];
-  let blok = '';
-  poradi.forEach(function(r) {
-    const zazn = Object.keys(zmenyEvidence)
-      .map(function(k){ return zmenyEvidence[k]; })
-      .filter(function(z){ return z.rezim === r; });
-    if (!zazn.length) return;
-    blok += REZIM_NAZEV[r].toUpperCase() + ' (' + zazn.length + '):\r\n';
-    zazn.forEach(function(z) {
-      blok += '\u2022 ' + z.name + ' \u2013 ' + z.pocet + ' ' + fotkySlovo(z.pocet) + ' (' + z.cas + ')';
-      if (r === 'vymena') blok += ' \u2013 původní fotky přesunuty do podsložky „old“';
+/* Revize všech zařízení provozovny – co na prodejně je a co ne. */
+async function uploadAktualni(token, provName) {
+  const jsou  = ITEMS.filter(function(it){ return fotoPocty[it[0]] > 0; });
+  const nejsou = ITEMS.filter(function(it){ return !(fotoPocty[it[0]] > 0); });
+  let blok = 'Celkem ' + ITEMS.length + ' zařízení: ' + jsou.length + ' na prodejně, ' + nejsou.length + ' chybí\r\n\r\n';
+  blok += 'NA PRODEJNĚ (' + jsou.length + '):\r\n';
+  if (!jsou.length) {
+    blok += '\u2022 zatím nic\r\n';
+  } else {
+    jsou.forEach(function(it) {
+      const p = fotoPocty[it[0]];
+      blok += '\u2022 ' + it[1] + ' \u2013 ' + p + ' ' + fotkySlovo(p);
+      const z = zmenaProZarizeni(it[0]);
+      if (z) blok += ' (' + z + ')';
       blok += '\r\n';
     });
+  }
+  blok += '\r\nNENÍ NA PRODEJNĚ (' + nejsou.length + '):\r\n';
+  if (!nejsou.length) {
+    blok += '\u2022 žádné – všechna zařízení jsou nafocena\r\n';
+  } else {
+    nejsou.forEach(function(it){ blok += '\u2022 ' + it[1] + '\r\n'; });
+  }
+  return await pripojDoDenniho(token, provName, 'Aktualni_zarizeni', 'AKTUÁLNÍ ZAŘÍZENÍ', blok, 'revize');
+}
+
+/* Co bylo v této relaci vyměněno. */
+async function uploadVymeneno(token, provName) {
+  const blok = zmenyBlokRezim('vymena');
+  if (!blok) return true;
+  return await pripojDoDenniho(token, provName, 'Vymeneno', 'VYMĚNĚNO', blok, 'výměna');
+}
+
+/* Co bylo v této relaci doplněno. */
+async function uploadDoplneno(token, provName) {
+  const blok = zmenyBlokRezim('doplneni');
+  if (!blok) return true;
+  return await pripojDoDenniho(token, provName, 'Doplneno', 'DOPLNĚNO', blok, 'doplnění');
+}
+
+/* Řádky evidence pro jeden režim. Prázdný řetězec = nic k zapsání. */
+function zmenyBlokRezim(r) {
+  const zazn = Object.keys(zmenyEvidence)
+    .map(function(k){ return zmenyEvidence[k]; })
+    .filter(function(z){ return z.rezim === r; });
+  if (!zazn.length) return '';
+  let blok = '';
+  zazn.forEach(function(z) {
+    blok += '\u2022 ' + z.name + ' \u2013 ' + z.pocet + ' ' + fotkySlovo(z.pocet) + ' (' + z.cas + ')';
+    if (r === 'vymena') blok += ' \u2013 původní fotky přesunuty do podsložky „old“';
     blok += '\r\n';
   });
   return blok;
+}
+
+/* Popisek k zařízení do revize: v jakém režimu se ho tato relace týkala. */
+function zmenaProZarizeni(id) {
+  const nalezy = [];
+  ['vymena', 'doplneni'].forEach(function(r) {
+    if (zmenyEvidence[id + '|' + r]) nalezy.push(REZIM_NAZEV[r].toLowerCase());
+  });
+  return nalezy.join(', ');
+}
+
+/* Při přechodu na výměnu se dosavadní soupisy absencí stanou historií:
+   Absence_zarizeni_*.txt se přejmenují na Puvodni_zarizeni_*.txt.
+   Nic se nemaže ani nepřepisuje – při kolizi se přidá pořadové číslo.
+   Vrací true i když není co přejmenovat.                           */
+async function prejmenujNaPuvodni(token, provName) {
+  const base = 'https://graph.microsoft.com/v1.0/me/drive';
+  const clean = s => s.replace(/[\\/: *?"<>|]/g, '_').trim();
+  const slozka = ['Fotodokumentace', clean(provName)].map(encodeURIComponent).join('/');
+  const hdr = { 'Authorization': 'Bearer ' + token };
+
+  const r = await fetch(base + '/root:/' + slozka + ':/children?$top=999', { headers: hdr });
+  if (r.status === 404) return true;            // složka provozovny ještě není
+  if (!r.ok) return false;
+  const data = await r.json();
+  const vse = (data.value || []).filter(function(it){ return it.file; });
+  const zdroje = vse.filter(function(it){ return /^Absence_zarizeni.*\.txt$/i.test(it.name); });
+  if (!zdroje.length) return true;              // žádný soupis absencí
+
+  // Jména, která už ve složce jsou – ať se při druhé výměně nic nepřepíše
+  const obsazena = {};
+  vse.forEach(function(it){ obsazena[it.name.toLowerCase()] = true; });
+
+  let chyby = 0;
+  for (let i = 0; i < zdroje.length; i++) {
+    const zbytek = zdroje[i].name.replace(/^Absence_zarizeni/i, '').replace(/\.txt$/i, '');
+    let cil = 'Puvodni_zarizeni' + zbytek + '.txt';
+    let n = 2;
+    while (obsazena[cil.toLowerCase()] && n < 100) {
+      cil = 'Puvodni_zarizeni' + zbytek + '_' + n + '.txt';
+      n++;
+    }
+    obsazena[cil.toLowerCase()] = true;
+    const mv = await fetch(base + '/items/' + zdroje[i].id, {
+      method: 'PATCH',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: cil })
+    });
+    if (!mv.ok) chyby++;
+  }
+  return chyby === 0;
 }
 
 /* Přesune stávající soubory ve složce zařízení do podsložky "old".
@@ -638,7 +707,12 @@ const REZIM_POPIS = {
 const REZIM_NAZEV = { 'pasport':'Pasportizace', 'vymena':'Výměna', 'doplneni':'Doplnění' };
 /* Zařízení, u kterých už v této relaci proběhl přesun do "old" */
 const vymenaHotovo = {};
-/* Co se v této relaci na provozovně dělo – podklad pro soubor Zmeny_*.txt.
+/* Přejmenování soupisů absencí na Puvodni_zarizeni – jednou za relaci
+   a provozovnu. puvodniChyba drží informaci pro závěrečnou hlášku.   */
+let puvodniHotovo = false;
+let puvodniChyba = false;
+/* Co se v této relaci na provozovně dělo – podklad pro soubory
+   Vymeneno_*.txt, Doplneno_*.txt a pro revizi v Aktualni_zarizeni_*.txt.
    Klíč je kombinace zařízení a režimu, takže jedno zařízení může být
    vedeno zvlášť jako vyměněné a zvlášť jako doplněné.              */
 const zmenyEvidence = {};
@@ -823,6 +897,18 @@ async function nahrajFotku(id, name, card, files) {
     const token = await getToken();
     if (!token) { chybny('Chyba přihlášení – zkuste znovu'); return; }
 
+    // Režim Výměna: dosavadní soupisy absencí se stanou historií.
+    // Jednou za relaci a provozovnu; neúspěch nahrávání nezastaví,
+    // jen se zopakuje u další fotky a zmíní v závěrečné hlášce.
+    if (rezim === 'vymena' && !puvodniHotovo) {
+      hint.textContent = 'Zakládám původní stav\u2026';
+      let prejm = false;
+      try { prejm = await prejmenujNaPuvodni(token, provozovna); }
+      catch(e) { console.error('Přejmenování na Puvodni_zarizeni:', e); }
+      if (prejm) { puvodniHotovo = true; puvodniChyba = false; }
+      else { puvodniChyba = true; }
+    }
+
     // Režim Výměna: před prvním nahráním přesuň stávající fotky do "old".
     // Jen jednou na zařízení a relaci, aby se nepřesouvaly i nové snímky.
     if (rezim === 'vymena' && !vymenaHotovo[id]) {
@@ -971,6 +1057,8 @@ function resetEvidenci() {
   }
   for (var k3 in vymenaHotovo) delete vymenaHotovo[k3];
   for (var k4 in zmenyEvidence) delete zmenyEvidence[k4];
+  puvodniHotovo = false;
+  puvodniChyba = false;
   var ta = document.getElementById('pozn-text');
   var stav = document.getElementById('pozn-stav');
   if (ta) ta.value = '';
@@ -1024,19 +1112,24 @@ async function doExport() {
 
   // Položky bez nahrané fotky – soupis je vždy úplný proti celému seznamu zařízení
   const chybejici = ITEMS.filter(function(it){ return !(fotoPocty[it[0]] > 0); });
-  const mameZmeny = Object.keys(zmenyEvidence).length > 0;
-  const nazevAbs  = denniNazev('Absence_zarizeni');
-  const nazevZm   = denniNazev('Zmeny');
+  const maVymenu  = !!zmenyBlokRezim('vymena');
+  const maDoplneni = !!zmenyBlokRezim('doplneni');
+  const nazevAbs = denniNazev('Absence_zarizeni');
+  const nazevAkt = denniNazev('Aktualni_zarizeni');
+  const nazevVym = denniNazev('Vymeneno');
+  const nazevDop = denniNazev('Doplneno');
 
   let popis = 'Do složky provozovny se zapíše:\n';
-  popis += '\u2022 ' + nazevAbs + ' \u2013 ucelený soupis, chybí ' + chybejici.length + ' z ' + ITEMS.length + '\n';
-  if (mameZmeny) popis += '\u2022 ' + nazevZm + ' \u2013 co bylo vyměněno a doplněno\n';
+  popis += '\u2022 ' + nazevAkt + ' \u2013 revize všech ' + ITEMS.length + ' zařízení\n';
+  popis += '\u2022 ' + nazevAbs + ' \u2013 chybí ' + chybejici.length + ' z ' + ITEMS.length + '\n';
+  if (maVymenu)   popis += '\u2022 ' + nazevVym + '\n';
+  if (maDoplneni) popis += '\u2022 ' + nazevDop + '\n';
   popis += '\nStávající soubory se nepřepisují, záznam se připojí na konec.\n\nPokračovat?';
   if (!confirm(popis)) return;
 
   const origTxt = ftTxt.textContent;
   xbtn.disabled = true;
-  ftTxt.textContent = 'Zapisuji soupis\u2026';
+  ftTxt.textContent = 'Zapisuji soupisy\u2026';
   const token = await getToken();
   if (!token) {
     alert('Chyba přihlášení – přihlaste se prosím znovu do OneDrive.');
@@ -1046,14 +1139,33 @@ async function doExport() {
   }
 
   const names = chybejici.map(function(it){ return it[1]; });
-  let okAbs = false, okZm = true;
+  const selhalo = [];
+
+  let okAbs = false;
   try { okAbs = await uploadAbsenceList(token, provozovna, names); }
   catch(e) { console.error('Absence list error:', e); }
-  if (mameZmeny) {
-    ftTxt.textContent = 'Zapisuji změny\u2026';
-    okZm = false;
-    try { okZm = await uploadZmeny(token, provozovna); }
-    catch(e) { console.error('Zmeny error:', e); }
+  if (!okAbs) selhalo.push(nazevAbs);
+
+  ftTxt.textContent = 'Zapisuji revizi\u2026';
+  let okAkt = false;
+  try { okAkt = await uploadAktualni(token, provozovna); }
+  catch(e) { console.error('Aktualni error:', e); }
+  if (!okAkt) selhalo.push(nazevAkt);
+
+  if (maVymenu) {
+    ftTxt.textContent = 'Zapisuji výměny\u2026';
+    let okVym = false;
+    try { okVym = await uploadVymeneno(token, provozovna); }
+    catch(e) { console.error('Vymeneno error:', e); }
+    if (!okVym) selhalo.push(nazevVym);
+  }
+
+  if (maDoplneni) {
+    ftTxt.textContent = 'Zapisuji doplnění\u2026';
+    let okDop = false;
+    try { okDop = await uploadDoplneno(token, provozovna); }
+    catch(e) { console.error('Doplneno error:', e); }
+    if (!okDop) selhalo.push(nazevDop);
   }
 
   if (okAbs) chybejici.forEach(function(it){ markNotPresent(it[0]); });
@@ -1061,18 +1173,19 @@ async function doExport() {
   xbtn.disabled = false;
   updateFooter();
 
-  if (okAbs && okZm) {
-    let h = 'Hotovo – zápisy připojeny, nic se nepřepsalo.\n\nFotodokumentace \u203a ' + provozovna + '\n';
-    h += '\u2022 ' + nazevAbs + ' (chybí ' + names.length + ' z ' + ITEMS.length + ')\n';
-    if (mameZmeny) h += '\u2022 ' + nazevZm + '\n';
-    alert(h);
-  } else if (okAbs && !okZm) {
-    alert('Soupis absence se uložil, zápis změn (' + nazevZm + ') selhal – zkuste export znovu.');
-  } else if (!okAbs && okZm && mameZmeny) {
-    alert('Zápis změn se uložil, soupis absence (' + nazevAbs + ') selhal – zkuste export znovu.');
-  } else {
-    alert('Uložení se nezdařilo – zkuste export znovu.');
+  if (selhalo.length) {
+    alert('Část zápisů se nezdařila:\n\u2022 ' + selhalo.join('\n\u2022 ')
+        + '\n\nOstatní soubory jsou uložené. Zkuste export znovu – nic se nepřepíše.');
+    return;
   }
+
+  let h = 'Hotovo – zápisy připojeny, nic se nepřepsalo.\n\nFotodokumentace \u203a ' + provozovna + '\n';
+  h += '\u2022 ' + nazevAkt + '\n';
+  h += '\u2022 ' + nazevAbs + ' (chybí ' + names.length + ' z ' + ITEMS.length + ')\n';
+  if (maVymenu)   h += '\u2022 ' + nazevVym + '\n';
+  if (maDoplneni) h += '\u2022 ' + nazevDop + '\n';
+  if (puvodniChyba) h += '\nPozor: starší soupisy absencí se nepodařilo přejmenovat na Puvodni_zarizeni.';
+  alert(h);
 }
 
 (function boot() {
