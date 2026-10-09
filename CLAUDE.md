@@ -35,6 +35,23 @@ se zopakuje u další fotky a zmíní v závěrečné hlášce (`puvodniChyba`).
 
 `Zmeny_*.txt` z commitu 916adb7 se už nezakládá — nahradily ho `Vymeneno` a `Doplneno`.
 
+## Přihlášení
+
+Firemní registrace Datasys je zabudovaná v kódu jako `VYCHOZI_CLIENT_ID`
+(`03c14057-865d-4f3f-9eff-ae4ba9503885`) a `VYCHOZI_TENANT`
+(`fd51798d-962f-4a26-aa45-66afc4240642`), aby se na každém zařízení nemusela zadávat.
+U jednostránkové aplikace nejde o tajné údaje — Entra je dostává v každém
+přihlašovacím požadavku.
+
+`aktivniCfg()` dává přednost uložené konfiguraci z `localStorage` před zabudovanou,
+takže kdo má v prohlížeči nastavené vlastní ID (např. osobní registraci
+`49b6369d-217f-48fe-abce-fe05d5364d48` s prázdným tenantem), toho to neovlivní.
+Pole v ⚙ zůstávají editovatelná a `obnovVychozi()` do nich vrátí zabudované hodnoty.
+Nastavení se při startu už neotevírá.
+
+Dvoufaktorové ověření se nenastavuje v aplikaci — vynucuje ho tenant
+(Conditional Access / Security defaults) a MSAL ho jen respektuje.
+
 ## Režimy práce
 
 `pasport` (první nafocení), `vymena` (staré fotky se přesunou do podsložky `old`,

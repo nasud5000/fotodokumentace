@@ -182,20 +182,20 @@ header p { margin-top:6px; font-size:.82rem; font-weight:300; color:rgba(255,255
 <div class="modal-wrap" id="modal-wrap">
   <div class="modal">
     <h2>Nastavení připojení k OneDrive</h2>
-    <p>Pro ukládání fotografií je potřeba zadat ID aplikace z Azure.</p>
+    <p>Firemní registrace je předvyplněná. Měňte jen tehdy, přihlašujete-li se pod jiným účtem.</p>
     <div class="modal-field">
       <label>ID APLIKACE (CLIENT ID)</label>
       <input class="modal-input" id="inp-clientid" type="text" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off" spellcheck="false">
     </div>
     <div class="modal-field">
-      <label>ID TENANTA (nechte prázdné pro běžné MS účty)</label>
+      <label>ID TENANTA (prázdné = osobní i firemní účty)</label>
       <input class="modal-input" id="inp-tenant" type="text" placeholder="common" autocomplete="off" spellcheck="false">
     </div>
     <div class="modal-row">
       <button class="modal-btn primary" onclick="saveSettings()">Uložit a pokračovat</button>
       <button class="modal-btn secondary" id="modal-cancel" onclick="closeModal()">Zrušit</button>
     </div>
-    <p class="modal-hint">Nastavení se uloží v tomto prohlížeči.</p>
+    <p class="modal-hint">Nastavení se uloží v tomto prohlížeči. <a href="#" onclick="obnovVychozi();return false" style="color:rgba(180,160,255,.9)">Obnovit výchozí</a></p>
     <div id="modal-url-block" style="margin-top:16px;padding:12px 14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:10px;display:none">
       <div style="font-size:.72rem;font-weight:500;color:rgba(255,255,255,.45);letter-spacing:.04em;margin-bottom:6px">AKTUÁLNÍ URL — zkopírujte jako Redirect URI v Azure</div>
       <div style="display:flex;gap:8px;align-items:center">
@@ -271,6 +271,21 @@ function isRestrictedEnv() {
   const ua = navigator.userAgent || '';
   return /Teams\//i.test(ua) || /Electron/i.test(ua) || window.self !== window.top;
 }
+/* Výchozí firemní registrace (Datasys) – předvyplněná, aby se na každém
+   zařízení nemusela zadávat znovu. ID aplikace ani ID tenanta nejsou
+   tajné údaje: u jednostránkové aplikace je Entra posílá v každém
+   přihlašovacím požadavku. Pole v nastavení zůstávají editovatelná,
+   takže přihlášení pod jiným účtem jde kdykoliv nastavit ručně.    */
+const VYCHOZI_CLIENT_ID = '03c14057-865d-4f3f-9eff-ae4ba9503885';
+const VYCHOZI_TENANT    = 'fd51798d-962f-4a26-aa45-66afc4240642';
+
+/* Konfigurace, se kterou se pracuje: uložená má přednost před výchozí. */
+function aktivniCfg() {
+  const cfg = loadCfg();
+  if (!cfg.clientId) return { clientId: VYCHOZI_CLIENT_ID, tenant: VYCHOZI_TENANT, vychozi: true };
+  return { clientId: cfg.clientId, tenant: cfg.tenant || 'common', vychozi: false };
+}
+
 function isFileProtocol() { return window.location.protocol === 'file:'; }
 function cleanRedirectUri() { return window.location.href.split('?')[0].split('#')[0]; }
 
@@ -332,10 +347,10 @@ function initMsal(clientId, tenant) {
 }
 
 function openModal() {
-  const cfg = loadCfg();
-  document.getElementById('inp-clientid').value = cfg.clientId || '';
-  document.getElementById('inp-tenant').value = cfg.tenant || '';
-  document.getElementById('modal-cancel').style.display = cfg.clientId ? '' : 'none';
+  const c = aktivniCfg();
+  document.getElementById('inp-clientid').value = c.clientId;
+  document.getElementById('inp-tenant').value = (c.tenant === 'common') ? '' : c.tenant;
+  document.getElementById('modal-cancel').style.display = '';
   if (!isFileProtocol()) {
     document.getElementById('modal-cur-url').textContent = cleanRedirectUri();
     document.getElementById('modal-url-block').style.display = 'block';
@@ -349,6 +364,12 @@ function copyUrl() {
   });
 }
 function closeModal() { document.getElementById('modal-wrap').classList.remove('open'); }
+/* Vrátí do polí zabudovanou firemní registraci. */
+function obnovVychozi() {
+  document.getElementById('inp-clientid').value = VYCHOZI_CLIENT_ID;
+  document.getElementById('inp-tenant').value = VYCHOZI_TENANT;
+  document.getElementById('inp-clientid').style.borderColor = '';
+}
 function saveSettings() {
   const cid = document.getElementById('inp-clientid').value.trim();
   if (!cid) { document.getElementById('inp-clientid').style.borderColor='rgba(255,100,100,.6)'; return; }
@@ -1189,9 +1210,9 @@ async function doExport() {
 }
 
 (function boot() {
-  var cfg = loadCfg();
-  if (cfg.clientId) { initMsal(cfg.clientId, cfg.tenant || 'common'); }
-  else { openModal(); }
+  // Nastavení se neotevírá – firemní registrace je zabudovaná.
+  var c = aktivniCfg();
+  initMsal(c.clientId, c.tenant);
   updateFooter();
 })();
 </script>
